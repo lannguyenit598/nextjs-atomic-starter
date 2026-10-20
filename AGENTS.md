@@ -40,7 +40,7 @@ Atomic Design is a composition model, not a mandatory five-layer hierarchy; an A
 
 ## Workflow
 
-1. Pick the matching skill: skills are listed by your agent from `.agents/skills/` (Claude Code: `.claude/skills/`, generated adapters). Tasks without a skill (bug fix, adding a dependency): `docs/ai/workflows.md`.
+1. Pick the matching skill: skills are listed by your agent from `.agents/skills/` (Claude Code: `.claude/skills/`, generated adapters). Tasks without a skill (bug fix, adding a dependency): `docs/ai/workflows.md`. Vendored upstream skills (`vercel-*`, `next-*-optimizer`, `next-dev-loop`, `web-design-guidelines`, `ui-ux-pro-max`) are advisory: on conflict `docs/ai/rules/` wins (e.g. no SWR or other new package without R-DEP approval, data fetching stays in the feature repository).
 2. Read the rule file for the area you change before editing it:
    - routes, rendering, caching → `docs/ai/rules/nextjs.md`
    - components, folders, imports → `docs/ai/rules/architecture.md`

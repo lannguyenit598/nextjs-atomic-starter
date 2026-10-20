@@ -4,3 +4,9 @@ test-results
 storybook-static
 pnpm-lock.yaml
 next-env.d.ts
+
+# Vendored upstream skills (docs/ai/README.md section 3): do not reformat, keeps upstream diffs small
+.agents/skills/vercel-*/
+.agents/skills/web-design-guidelines/
+.agents/skills/next-*/
+.agents/skills/ui-ux-pro-max/

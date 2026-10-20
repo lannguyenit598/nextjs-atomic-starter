@@ -20,7 +20,7 @@ docs/ai/
     └── testing.md             R-TEST-* + "change type → required commands" table
 
 .agents/                       SOURCE of skills and scoped rules (open format, read directly by several agents)
-├── skills/<name>/SKILL.md     9 skills
+├── skills/<name>/SKILL.md     9 project skills + 8 vendored upstream skills (section 3)
 └── rules/*.md                 3 path-scoped rules (frontmatter `trigger: glob`)
 
 .claude/                       GENERATED for Claude Code. Do not edit by hand.
@@ -72,6 +72,31 @@ Sources: official documentation (code.claude.com/docs memory + skills; learn.cha
 | `release-readiness`               | Before a large commit or release; "is the repo ready?"                                                       |
 
 Bug fixes and adding dependencies have no dedicated skill: see [`workflows.md`](workflows.md).
+
+### Vendored upstream skills
+
+Copied from upstream, not written for this repo. Project rules (`docs/ai/rules/`) win on conflict (section 5), e.g. data fetching stays in the feature repository (R-FEAT-4) and new packages still need R-DEP approval even when a skill suggests one.
+
+| Skill                                | Use when                                                                                                                         | Source                                                          |
+| ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| `vercel-react-best-practices`        | Writing or reviewing React/Next.js code for performance                                                                          | `vercel-labs/agent-skills` `063bee94`                           |
+| `vercel-composition-patterns`        | Designing reusable component APIs (compound components, no boolean props)                                                        | `vercel-labs/agent-skills` `063bee94`                           |
+| `web-design-guidelines`              | Reviewing UI for accessibility and UX (fetches the guidelines at run time)                                                       | `vercel-labs/agent-skills` `063bee94`                           |
+| `next-dev-loop`                      | Verifying a change in the running app (needs `next dev` and `agent-browser`)                                                     | `vercel/next.js` `skills/` `4550be40`                           |
+| `next-bundle-optimizer`              | Auditing or reducing client bundle size and initial load                                                                         | `vercel/next.js` `skills/` `4550be40`                           |
+| `next-cache-components-optimizer`    | Growing a route's static shell, adding `instant()` regression tests (needs `@next/playwright`, not installed: an R-DEP decision) | `vercel/next.js` `skills/` `4550be40`                           |
+| `next-partial-prefetching-optimizer` | Tuning what a client navigation prefetches                                                                                       | `vercel/next.js` `skills/` `4550be40`                           |
+| `ui-ux-pro-max`                      | Choosing visual direction, palettes, typography; UI/UX review (needs Python 3)                                                   | `nextlevelbuilder/ui-ux-pro-max-skill` `56ea9cf1` (third party) |
+
+Local changes to upstream files (re-apply after an update):
+
+- Frontmatter flattened to one `key: value` per line (`description` on one line; `metadata` and `argument-hint` dropped) so `pnpm agents:check` accepts it.
+- `ui-ux-pro-max/SKILL.md`: script path `${CLAUDE_PLUGIN_ROOT}/.claude/skills/...` replaced with `.agents/skills/ui-ux-pro-max/scripts/search.py`; its upstream test suite not copied.
+- `vercel-react-best-practices/AGENTS.md`: three broken `./<rule>.md` links pointed at `./rules/<rule>.md`.
+
+Not vendored: the `*-adoption` skills from `vercel/next.js` (Cache Components and Partial Prefetching are already on in `next.config.ts`); Vercel deploy/CLI/cost skills (the template is not tied to Vercel hosting); React Native and writing-guidelines skills. `vercel-react-view-transitions` (`vercel-labs/agent-skills`) is worth adding once the app needs route animations.
+
+To update: copy the upstream skill folder over `.agents/skills/<name>/`, re-apply the local changes above, update the commit in this table, then run `pnpm agents:sync` and `pnpm check`. Do not use `npx skills add` with Claude Code as a target: it symlinks `.claude/skills/<name>` into `.agents/skills/<name>`, and `pnpm agents:sync` would then overwrite the upstream `SKILL.md` with the adapter.
 
 ## 4. Invoking a skill
 
