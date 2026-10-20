@@ -1,3 +1,5 @@
+# pnpm only runs dependency install scripts that are explicitly allowed.
 allowBuilds:
+  esbuild: true
   sharp: false
   unrs-resolver: false
