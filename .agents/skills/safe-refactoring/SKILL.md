@@ -16,7 +16,7 @@ description: 'Refactor existing code without changing behaviour: move, rename, e
 3. **Safety net**: run the existing tests for the area; if behaviour is untested, add characterization tests first and see them pass on the old code.
 4. **Smallest change**: one concern per step; keep public component APIs (props) stable unless the task is to change them; update all consumers in the same change.
 5. **Verify**: same tests still pass, plus `pnpm check` and `pnpm build`; `pnpm build-storybook` if components moved; `pnpm test:e2e` if routes changed.
-6. **Docs**: update paths mentioned in `README.md`, `README.en.md`, `docs/` and `docs/ai/` if files moved.
+6. **Docs**: update paths mentioned in `README.md`, `README.vi.md`, `docs/` and `docs/ai/` if files moved.
 
 ## Pitfalls
 

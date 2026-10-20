@@ -1,64 +1,64 @@
 # Audit: Production Readiness
 
-- **Ngày:** 2026-10-20
-- **Dựa trên:** [`nextjs-atomic-design-audit.md`](nextjs-atomic-design-audit.md), [`dependency-deep-audit.md`](dependency-deep-audit.md)
-- **Phạm vi:** đóng hoặc ghi nhận các rủi ro còn lại trước khi tái sử dụng template. Giữ nguyên kiến trúc và baseline dependency đã duyệt.
+- **Date:** 2026-10-20
+- **Based on:** [`nextjs-atomic-design-audit.md`](nextjs-atomic-design-audit.md), [`dependency-deep-audit.md`](dependency-deep-audit.md)
+- **Scope:** close or record the remaining risks before reusing the template. Keep the approved architecture and dependency baseline unchanged.
 
-## Kết luận
+## Conclusion
 
-| Hạng mục                    | Verdict                                                                                                                                                                                                                                                              |
-| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **SEC-1 (thiếu auth)**      | **Đã giảm thiểu, fail-closed.** Ở REST mode, visitor chưa đăng nhập **không thể** đọc hay ghi dữ liệu backend, và cũng không thể "mượn" `API_TOKEN`. Đã kiểm chứng bằng unit test, mutation test, và trình duyệt thật với mock backend (backend nhận **0 request**). |
-| **Authentication thật**     | **Chưa có (có chủ đích).** Contract đã sẵn sàng; phần tích hợp với nhà cung cấp đăng nhập cần quyết định từ phía backend.                                                                                                                                            |
-| **Security headers và CSP** | **PASS.** CSP theo mẫu "Without Nonces" của tài liệu Next.js; 0 vi phạm CSP trong toàn bộ E2E, ở cả production lẫn dev.                                                                                                                                              |
-| **CI**                      | **PASS khi chạy local; remote NOT VERIFIED.** Workflow qua `actionlint`, và mọi bước của CI đã chạy thành công trên một bản copy sạch. Chưa có lần chạy GitHub Actions thật: repo chưa có remote và toàn bộ thay đổi chưa commit.                                    |
-| **Dependency stability**    | **PASS.** Không thêm package nào. Baseline giữ nguyên.                                                                                                                                                                                                               |
-| **Template reusability**    | **PASS.** Đã thực sự xóa demo Task theo README trên bản copy sạch; mọi kiểm tra đều xanh.                                                                                                                                                                            |
-| **Production-ready?**       | **Template: sẵn sàng để tái sử dụng. Deploy production: CHƯA.** Còn 2 blocker (mục 10): tích hợp auth thật, và commit + chạy CI xanh trên GitHub.                                                                                                                    |
+| Area                         | Verdict                                                                                                                                                                                                                                                                          |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **SEC-1 (missing auth)**     | **Mitigated, fail-closed.** In REST mode, a visitor who is not signed in **cannot** read or write backend data, and also cannot "borrow" `API_TOKEN`. Verified with unit tests, mutation tests, and a real browser against a mock backend (the backend received **0 requests**). |
+| **Real authentication**      | **Not yet (intentionally).** The contract is ready; the integration with a sign-in provider needs a decision on the backend side.                                                                                                                                                |
+| **Security headers and CSP** | **PASS.** CSP follows the "Without Nonces" pattern from the Next.js docs; 0 CSP violations across the whole E2E suite, in both production and dev.                                                                                                                               |
+| **CI**                       | **PASS when run locally; remote NOT VERIFIED.** The workflow passes `actionlint`, and every CI step ran successfully on a clean copy. There has been no real GitHub Actions run: the repo has no remote yet and none of the changes are committed.                               |
+| **Dependency stability**     | **PASS.** No packages added. Baseline unchanged.                                                                                                                                                                                                                                 |
+| **Template reusability**     | **PASS.** The demo Task was actually removed following the README on a clean copy; all checks are green.                                                                                                                                                                         |
+| **Production-ready?**        | **Template: ready for reuse. Production deploy: NOT YET.** There are 2 remaining blockers (section 10): real auth integration, and commit + a green CI run on GitHub.                                                                                                            |
 
-## 1. Công cụ đã dùng
+## 1. Tools used
 
-| Capability                                                                  | Mục đích                                                                                                                |
-| --------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| Tài liệu Next.js 16.4.2 đi kèm package (`node_modules/next/dist/docs/`)     | `content-security-policy.md`, `authentication-with-cache-components.md`, `unauthorized.md`, `instrumentation-client.md` |
-| Context7 (`/colinhacks/zod/v4.6.5`)                                         | Đã dùng ở audit dependency (Zod Mini); ở phần này chỉ dùng tài liệu đi kèm package                                      |
-| Subagent `code-modernization:security-auditor` (read-only)                  | Review đối kháng bản sửa SEC-1 và CSP: tìm đường vượt qua guard, cách parse env, spoofing, cache leak                   |
-| Playwright (browser thật)                                                   | E2E; kịch bản REST với mock backend; tìm nguồn vi phạm CSP                                                              |
-| actionlint v1.7.12 (binary chính thức, đã kiểm tra SHA-256, đặt ngoài repo) | Kiểm tra cú pháp và ngữ nghĩa của GitHub Actions workflow                                                               |
-| Bản copy sạch (chỉ các file git sẽ commit, `node_modules` rỗng)             | Giả lập CI như một lần clone mới, và giả lập việc xóa demo                                                              |
+| Capability                                                                      | Purpose                                                                                                                 |
+| ------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| Next.js 16.4.2 docs bundled with the package (`node_modules/next/dist/docs/`)   | `content-security-policy.md`, `authentication-with-cache-components.md`, `unauthorized.md`, `instrumentation-client.md` |
+| Context7 (`/colinhacks/zod/v4.6.5`)                                             | Used in the dependency audit (Zod Mini); this part only uses the docs bundled with the package                          |
+| Subagent `code-modernization:security-auditor` (read-only)                      | Adversarial review of the SEC-1 and CSP fixes: looking for ways around the guard, env parsing, spoofing, cache leaks    |
+| Playwright (real browser)                                                       | E2E; REST scenario with a mock backend; finding the source of CSP violations                                            |
+| actionlint v1.7.12 (official binary, SHA-256 verified, placed outside the repo) | Checks the syntax and semantics of the GitHub Actions workflow                                                          |
+| Clean copy (only the files git would commit, empty `node_modules`)              | Simulates CI as a fresh clone, and simulates removing the demo                                                          |
 
-## 2. SEC-1: Authentication và Authorization
+## 2. SEC-1: Authentication and Authorization
 
-### 2.1 Endpoint cần bảo vệ (đã kiểm kê)
+### 2.1 Endpoints that need protection (inventoried)
 
-| Endpoint                                                                                                               | Loại                        | Yêu cầu                                | Trước                | Sau                                                                                     |
-| ---------------------------------------------------------------------------------------------------------------------- | --------------------------- | -------------------------------------- | -------------------- | --------------------------------------------------------------------------------------- |
-| `createTaskAction`, `updateTaskAction`, `updateTaskStatusAction`, `deleteTaskAction` (`src/features/tasks/actions.ts`) | Server Action (POST public) | Có session và permission `tasks:write` | Không kiểm tra       | `requireSession(TASK_PERMISSIONS.write)` là dòng đầu tiên, chạy **trước** bước validate |
-| `/tasks`, `/dashboard` (đọc qua repository)                                                                            | Server Component            | Có session                             | Không kiểm tra       | `getSession()` trong `<Suspense>`; null thì hiển thị "Sign-in required"                 |
-| Mọi lời gọi backend (`backendRequest`)                                                                                 | Data access                 | Có session                             | Luôn gửi `API_TOKEN` | `requireSession()` chạy trước `fetch`; gửi token của user nếu có                        |
-| Route Handler, `proxy.ts`                                                                                              |                             |                                        | Không có             | Không có (subagent đã xác nhận)                                                         |
+| Endpoint                                                                                                               | Type                        | Requirement                                    | Before                   | After                                                                                              |
+| ---------------------------------------------------------------------------------------------------------------------- | --------------------------- | ---------------------------------------------- | ------------------------ | -------------------------------------------------------------------------------------------------- |
+| `createTaskAction`, `updateTaskAction`, `updateTaskStatusAction`, `deleteTaskAction` (`src/features/tasks/actions.ts`) | Server Action (public POST) | Has a session and the `tasks:write` permission | Not checked              | `requireSession(TASK_PERMISSIONS.write)` is the first line, running **before** the validation step |
+| `/tasks`, `/dashboard` (read via repository)                                                                           | Server Component            | Has a session                                  | Not checked              | `getSession()` inside `<Suspense>`; if null, shows "Sign-in required"                              |
+| Every backend call (`backendRequest`)                                                                                  | Data access                 | Has a session                                  | Always sends `API_TOKEN` | `requireSession()` runs before `fetch`; sends the user's token if present                          |
+| Route Handler, `proxy.ts`                                                                                              |                             |                                                | None                     | None (confirmed by the subagent)                                                                   |
 
-### 2.2 Thiết kế (provider-independent, fail-closed)
+### 2.2 Design (provider-independent, fail-closed)
 
 ```text
 src/lib/auth.ts           Session, AuthError, getSession(), requireSession(), hasPermission()
-src/lib/auth-provider.ts  resolveSession(): ĐIỂM TÍCH HỢP DUY NHẤT; mặc định trả null
-src/lib/env.ts            AUTH_ALLOW_ANONYMOUS (z.stringbool, mặc định false)
+src/lib/auth-provider.ts  resolveSession(): THE ONLY INTEGRATION POINT; returns null by default
+src/lib/env.ts            AUTH_ALLOW_ANONYMOUS (z.stringbool, default false)
 ```
 
-| Chế độ                                        | `getSession()` trả về         | Ghi chú                                                                               |
-| --------------------------------------------- | ----------------------------- | ------------------------------------------------------------------------------------- |
-| `API_MODE=demo`                               | Session demo (`*`)            | Giữ nguyên trải nghiệm phát triển local                                               |
-| `API_MODE=rest` (mặc định)                    | `resolveSession()` → **null** | Fail-closed; in một cảnh báo `[auth]` khi có request đầu tiên                         |
-| `API_MODE=rest` + `AUTH_ALLOW_ANONYMOUS=true` | Session ẩn danh (`*`)         | Lối thoát có chủ đích, chỉ dùng sau VPN/SSO gateway; server in cảnh báo khi khởi động |
-| `API_MODE=rest` + đã hiện thực provider       | Session thật                  | `accessToken` được chuyển tới backend                                                 |
+| Mode                                          | `getSession()` returns        | Notes                                                                                                   |
+| --------------------------------------------- | ----------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `API_MODE=demo`                               | Demo session (`*`)            | Keeps the local development experience unchanged                                                        |
+| `API_MODE=rest` (default)                     | `resolveSession()` → **null** | Fail-closed; prints an `[auth]` warning on the first request                                            |
+| `API_MODE=rest` + `AUTH_ALLOW_ANONYMOUS=true` | Anonymous session (`*`)       | Intentional escape hatch, only for use behind a VPN/SSO gateway; the server prints a warning at startup |
+| `API_MODE=rest` + provider implemented        | Real session                  | `accessToken` is forwarded to the backend                                                               |
 
-Lý do của từng lựa chọn:
+Reasons for each choice:
 
-- **Không dùng `unauthorized()` hay `forbidden()`:** vẫn là experimental (`authInterrupts`, theo `03-api-reference/04-functions/unauthorized.md`).
-- **Không kiểm tra session ở top-level của layout:** sẽ chặn toàn bộ segment và phá static shell (`authentication-with-cache-components.md`, Step 2).
-- **Đọc request-time data trước, rồi mới kiểm tra session** (`tasks/page.tsx`, `dashboard/page.tsx`): nếu không, nhánh "Sign-in required" bị tính sẵn lúc build vào static shell. Lỗi này do subagent phát hiện (P3-1); đã sửa và kiểm chứng bằng cách build ở REST mode rồi bật `AUTH_ALLOW_ANONYMOUS` chỉ lúc runtime.
-- **`action-result.ts` nhận diện `AuthError` theo `name`**, không import: file này được cả client dùng, trong khi `auth.ts` là `server-only`.
+- **No `unauthorized()` or `forbidden()`:** they are still experimental (`authInterrupts`, per `03-api-reference/04-functions/unauthorized.md`).
+- **No session check at the top level of the layout:** it would block the whole segment and break the static shell (`authentication-with-cache-components.md`, Step 2).
+- **Read request-time data first, then check the session** (`tasks/page.tsx`, `dashboard/page.tsx`): otherwise the "Sign-in required" branch is precomputed at build time into the static shell. This bug was found by the subagent (P3-1); it was fixed and verified by building in REST mode and then enabling `AUTH_ALLOW_ANONYMOUS` only at runtime.
+- **`action-result.ts` recognizes `AuthError` by `name`**, without importing it: this file is also used by the client, while `auth.ts` is `server-only`.
 
 ### 2.3 Authentication integration contract
 
@@ -66,176 +66,176 @@ Lý do của từng lựa chọn:
 // src/lib/auth.ts
 export type Session = {
   userId: string
-  permissions: readonly string[] // ví dụ 'orders:write'; '*' = mọi quyền
-  accessToken?: string // token của user; nếu có, được gửi tới backend thay cho API_TOKEN
+  permissions: readonly string[] // e.g. 'orders:write'; '*' = all permissions
+  accessToken?: string // the user's token; if present, it is sent to the backend instead of API_TOKEN
 }
 
-// src/lib/auth-provider.ts: hàm DUY NHẤT dự án phải viết
+// src/lib/auth-provider.ts: the ONLY function the project has to write
 export async function resolveSession(): Promise<Session | null>
 ```
 
-Quy ước dùng cho mọi feature mới (đã cập nhật trong `docs/create-new-feature.md` và `docs/api-integration.md` §8):
+Conventions for every new feature (already updated in `docs/create-new-feature.md` and `docs/api-integration.md` §8):
 
-1. **Server Action:** `await requireSession('<feature>:write')` là dòng đầu tiên trong `try`.
-2. **Page đọc dữ liệu:** đọc request-time data trước, rồi `if (!(await getSession()))` hiển thị trạng thái "Sign-in required".
-3. **Repository không đi qua REST** (ví dụ gọi thẳng DB): phải tự gọi `requireSession()`.
-4. **`resolveSession()` nên trả về `accessToken`.** Nếu không, mọi user dùng chung quyền của service account, và backend không thể kiểm tra quyền sở hữu dữ liệu (rủi ro IDOR theo thiết kế).
+1. **Server Action:** `await requireSession('<feature>:write')` is the first line inside `try`.
+2. **Page that reads data:** read request-time data first, then `if (!(await getSession()))` shows the "Sign-in required" state.
+3. **Repository that does not go through REST** (for example, calls the DB directly): must call `requireSession()` itself.
+4. **`resolveSession()` should return `accessToken`.** Otherwise, every user shares the service account's permissions, and the backend cannot check data ownership (IDOR risk by design).
 
-### 2.4 Phần phụ thuộc backend (cần quyết định, chưa làm)
+### 2.4 Backend-dependent parts (decision needed, not done)
 
-| Quyết định                      | Phương án                                                                                                                                                                                                     |
-| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Nhà cung cấp đăng nhập          | JWT do backend cấp (cookie `httpOnly`) / OIDC (Keycloak, Entra ID, Auth0) / session cookie của backend. Có ví dụ JWT + `/me` trong `docs/api-integration.md` §8; ví dụ này đã được kiểm tra typecheck và lint |
-| Màn hình login và logout        | Route group `src/app/(auth)/` + `AuthTemplate`                                                                                                                                                                |
-| Refresh token, thời hạn session | Theo IdP                                                                                                                                                                                                      |
-| Danh sách permission            | Do backend trả về; map vào `Session.permissions`                                                                                                                                                              |
-| Redirect ở `src/proxy.ts`       | Tùy chọn, chỉ là lớp UX (không thay thế việc kiểm tra ở action và data)                                                                                                                                       |
+| Decision                         | Options                                                                                                                                                                                                               |
+| -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Sign-in provider                 | JWT issued by the backend (`httpOnly` cookie) / OIDC (Keycloak, Entra ID, Auth0) / backend session cookie. There is a JWT + `/me` example in `docs/api-integration.md` §8; this example has passed typecheck and lint |
+| Login and logout screens         | Route group `src/app/(auth)/` + `AuthTemplate`                                                                                                                                                                        |
+| Refresh tokens, session lifetime | Per the IdP                                                                                                                                                                                                           |
+| Permission list                  | Returned by the backend; mapped into `Session.permissions`                                                                                                                                                            |
+| Redirect in `src/proxy.ts`       | Optional, only a UX layer (does not replace the checks in actions and data access)                                                                                                                                    |
 
-### 2.5 Bằng chứng
+### 2.5 Evidence
 
-| Kiểm chứng                                              | Kết quả                                                                                                                                 |
-| ------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/lib/auth.test.ts`                                  | Demo có session; REST fail-closed; provider session + kiểm tra permission (`forbidden`); anonymous chỉ khi bật cờ                       |
-| `src/lib/api/backend.test.ts`                           | Không có session: `fetch` **không được gọi**. Session của user: header `Bearer user-token`. Anonymous: `Bearer service-token`           |
-| `src/features/tasks/actions.test.ts`                    | Cả 4 action trả lỗi "sign in" khi chưa đăng nhập và lỗi "permission" khi thiếu quyền; repository không bị gọi; auth chạy trước validate |
-| `src/lib/env.test.ts`                                   | Parse thật biến `AUTH_ALLOW_ANONYMOUS`: `"false"`, `"0"`, `""` và không đặt đều cho `false`; `"maybe"` làm server dừng khi khởi động    |
-| Mutation test                                           | Bỏ guard ở `backendRequest`: 2 test fail. Bỏ guard ở `createTaskAction`: 3 test fail. Khôi phục: pass lại                               |
-| Trình duyệt + mock backend, REST mặc định               | `/dashboard`, `/tasks`: "Sign-in required"; thử tạo task: bị từ chối với "…not signed in…"; **backend nhận 0 request**                  |
-| Trình duyệt + mock backend, `AUTH_ALLOW_ANONYMOUS=true` | Đọc và ghi hoạt động (lần đầu kiểm chứng **ghi** ở REST mode end-to-end); có cảnh báo `[auth]` khi khởi động                            |
-| Subagent review đối kháng                               | **Không có đường vượt qua guard ở mức P0/P1.** Có 5 phát hiện P3, đã sửa tất cả (mục 3)                                                 |
+| Verification                                        | Result                                                                                                                                                                       |
+| --------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/lib/auth.test.ts`                              | Demo has a session; REST is fail-closed; provider session + permission check (`forbidden`); anonymous only when the flag is enabled                                          |
+| `src/lib/api/backend.test.ts`                       | No session: `fetch` is **not called**. User session: header `Bearer user-token`. Anonymous: `Bearer service-token`                                                           |
+| `src/features/tasks/actions.test.ts`                | All 4 actions return a "sign in" error when not signed in and a "permission" error when the permission is missing; the repository is not called; auth runs before validation |
+| `src/lib/env.test.ts`                               | Real parsing of the `AUTH_ALLOW_ANONYMOUS` variable: `"false"`, `"0"`, `""` and unset all give `false`; `"maybe"` makes the server stop at startup                           |
+| Mutation test                                       | Removing the guard in `backendRequest`: 2 tests fail. Removing the guard in `createTaskAction`: 3 tests fail. Restoring: passing again                                       |
+| Browser + mock backend, default REST                | `/dashboard`, `/tasks`: "Sign-in required"; trying to create a task: rejected with "…not signed in…"; **backend received 0 requests**                                        |
+| Browser + mock backend, `AUTH_ALLOW_ANONYMOUS=true` | Reads and writes work (first end-to-end verification of **writes** in REST mode); an `[auth]` warning at startup                                                             |
+| Adversarial subagent review                         | **No way around the guard at P0/P1 level.** 5 P3 findings, all fixed (section 3)                                                                                             |
 
-## 3. Các thay đổi đã thực hiện
+## 3. Changes made
 
-| File                                                                                                               | Thay đổi                                                                                                                                                                                     |
-| ------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/lib/auth.ts` (mới), `src/lib/auth-provider.ts` (mới)                                                          | Contract auth, chính sách fail-closed                                                                                                                                                        |
-| `src/lib/env.ts`                                                                                                   | `AUTH_ALLOW_ANONYMOUS` (dùng `z.stringbool`, giá trị không hợp lệ thì dừng khởi động)                                                                                                        |
-| `src/lib/api/backend.ts`                                                                                           | `requireSession()` trước mọi `fetch`; ưu tiên token của user                                                                                                                                 |
-| `src/lib/action-result.ts`                                                                                         | Đổi `AuthError` thành message cho người dùng (không log thành lỗi)                                                                                                                           |
-| `src/features/tasks/actions.ts`, `constants.ts`                                                                    | Guard `tasks:write` ở cả 4 action; hằng `TASK_PERMISSIONS`                                                                                                                                   |
-| `src/app/(app)/tasks/page.tsx`, `dashboard/page.tsx`                                                               | Trạng thái "Sign-in required"; đọc request-time data trước khi kiểm tra session                                                                                                              |
-| `src/instrumentation-node.ts`                                                                                      | Cảnh báo khi khởi động nếu `AUTH_ALLOW_ANONYMOUS=true`                                                                                                                                       |
-| `next.config.ts`                                                                                                   | CSP và security headers; `poweredByHeader: false`                                                                                                                                            |
-| `src/instrumentation-client.ts` (mới)                                                                              | `config({ jitless: true })` cho Zod (mục 4)                                                                                                                                                  |
-| `e2e/fixtures.ts` (mới), `e2e/security.spec.ts` (mới), `e2e/tasks.spec.ts`                                         | Fixture tự động bắt vi phạm CSP cho **mọi** E2E test; test header và theme script                                                                                                            |
-| `.github/workflows/ci.yml`                                                                                         | `permissions: contents: read`; thêm bước `pnpm audit --prod`                                                                                                                                 |
-| `public/.gitkeep` (mới)                                                                                            | Sửa lỗi CI: thư mục `public/` rỗng không được git lưu, làm Storybook build fail khi clone mới                                                                                                |
-| Test mới: `auth.test.ts`, `backend.test.ts`, `env.test.ts`; mở rộng `actions.test.ts`                              | 77 → **85** test                                                                                                                                                                             |
-| `src/lib/**`, `src/components/**` (comment, test, story)                                                           | Đổi ví dụ "task" thành từ trung tính (`orders`, `item`), để tầng shared không nhắc tới demo                                                                                                  |
-| `README.md`, `.env.example`, `docs/api-integration.md` §8, `docs/architecture.md` §9, `docs/create-new-feature.md` | Tài liệu contract auth; cờ `AUTH_ALLOW_ANONYMOUS`; tutorial dùng `requireSession` và id allowlist (trước đây tutorial dùng `typeof id === 'string'`, sẽ tái tạo lỗi SEC-2 ở mọi feature mới) |
+| File                                                                                                               | Change                                                                                                                                                                                                                                       |
+| ------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/lib/auth.ts` (new), `src/lib/auth-provider.ts` (new)                                                          | Auth contract, fail-closed policy                                                                                                                                                                                                            |
+| `src/lib/env.ts`                                                                                                   | `AUTH_ALLOW_ANONYMOUS` (uses `z.stringbool`; an invalid value stops startup)                                                                                                                                                                 |
+| `src/lib/api/backend.ts`                                                                                           | `requireSession()` before every `fetch`; prefers the user's token                                                                                                                                                                            |
+| `src/lib/action-result.ts`                                                                                         | Turns `AuthError` into a user-facing message (not logged as an error)                                                                                                                                                                        |
+| `src/features/tasks/actions.ts`, `constants.ts`                                                                    | `tasks:write` guard in all 4 actions; `TASK_PERMISSIONS` constant                                                                                                                                                                            |
+| `src/app/(app)/tasks/page.tsx`, `dashboard/page.tsx`                                                               | "Sign-in required" state; reads request-time data before checking the session                                                                                                                                                                |
+| `src/instrumentation-node.ts`                                                                                      | Warning at startup if `AUTH_ALLOW_ANONYMOUS=true`                                                                                                                                                                                            |
+| `next.config.ts`                                                                                                   | CSP and security headers; `poweredByHeader: false`                                                                                                                                                                                           |
+| `src/instrumentation-client.ts` (new)                                                                              | `config({ jitless: true })` for Zod (section 4)                                                                                                                                                                                              |
+| `e2e/fixtures.ts` (new), `e2e/security.spec.ts` (new), `e2e/tasks.spec.ts`                                         | Fixture that automatically catches CSP violations for **every** E2E test; tests for headers and the theme script                                                                                                                             |
+| `.github/workflows/ci.yml`                                                                                         | `permissions: contents: read`; added a `pnpm audit --prod` step                                                                                                                                                                              |
+| `public/.gitkeep` (new)                                                                                            | CI bug fix: git does not store the empty `public/` folder, which made the Storybook build fail on a fresh clone                                                                                                                              |
+| New tests: `auth.test.ts`, `backend.test.ts`, `env.test.ts`; extended `actions.test.ts`                            | 77 → **85** tests                                                                                                                                                                                                                            |
+| `src/lib/**`, `src/components/**` (comments, tests, stories)                                                       | Changed "task" examples to neutral words (`orders`, `item`), so the shared layer does not mention the demo                                                                                                                                   |
+| `README.md`, `.env.example`, `docs/api-integration.md` §8, `docs/architecture.md` §9, `docs/create-new-feature.md` | Documentation of the auth contract; the `AUTH_ALLOW_ANONYMOUS` flag; the tutorial uses `requireSession` and an id allowlist (previously the tutorial used `typeof id === 'string'`, which would recreate the SEC-2 bug in every new feature) |
 
-## 4. Security headers và CSP
+## 4. Security headers and CSP
 
-**Header được gửi trên mọi route** (`next.config.ts`):
+**Headers sent on every route** (`next.config.ts`):
 
-| Header                    | Giá trị                                                                                                                                                                                                                                                 |
-| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Content-Security-Policy` | `default-src 'self'; script-src 'self' 'unsafe-inline'` (thêm `'unsafe-eval'` khi dev)`; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'` |
-| `X-Content-Type-Options`  | `nosniff`                                                                                                                                                                                                                                               |
-| `Referrer-Policy`         | `strict-origin-when-cross-origin`                                                                                                                                                                                                                       |
-| `X-Frame-Options`         | `DENY`                                                                                                                                                                                                                                                  |
-| `Permissions-Policy`      | `camera=(), microphone=(), geolocation=(), browsing-topics=()`                                                                                                                                                                                          |
-| `X-Powered-By`            | Đã tắt                                                                                                                                                                                                                                                  |
+| Header                    | Value                                                                                                                                                                                                                                                  |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `Content-Security-Policy` | `default-src 'self'; script-src 'self' 'unsafe-inline'` (plus `'unsafe-eval'` in dev)`; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'` |
+| `X-Content-Type-Options`  | `nosniff`                                                                                                                                                                                                                                              |
+| `Referrer-Policy`         | `strict-origin-when-cross-origin`                                                                                                                                                                                                                      |
+| `X-Frame-Options`         | `DENY`                                                                                                                                                                                                                                                 |
+| `Permissions-Policy`      | `camera=(), microphone=(), geolocation=(), browsing-topics=()`                                                                                                                                                                                         |
+| `X-Powered-By`            | Disabled                                                                                                                                                                                                                                               |
 
-**Vì sao không dùng nonce:** tài liệu ghi rõ nonce yêu cầu mọi trang render động, và "**Partial Prerendering (PPR) is incompatible** with nonce-based CSP" (`02-guides/content-security-policy.md`, "Static vs Dynamic Rendering with CSP"). `/dashboard` và `/tasks` đang dùng PPR. Hash cho theme script cũng không giúp được gì: khi có hash, trình duyệt bỏ qua `'unsafe-inline'`, và các inline script RSC của chính Next sẽ bị chặn.
+**Why no nonce:** the docs state clearly that nonces require every page to be rendered dynamically, and "**Partial Prerendering (PPR) is incompatible** with nonce-based CSP" (`02-guides/content-security-policy.md`, "Static vs Dynamic Rendering with CSP"). `/dashboard` and `/tasks` use PPR. A hash for the theme script does not help either: when a hash is present, the browser ignores `'unsafe-inline'`, and Next's own inline RSC scripts would be blocked.
 
-**Không đưa `upgrade-insecure-requests` vào mặc định:** directive này làm hỏng các deployment HTTP thuần trong mạng nội bộ (subagent P3-2). Bật lại khi chạy sau HTTPS; HSTS nên đặt ở proxy hoặc CDN.
+**`upgrade-insecure-requests` is not included by default:** this directive breaks plain-HTTP deployments on internal networks (subagent P3-2). Turn it back on when running behind HTTPS; HSTS should be set at the proxy or CDN.
 
-**Phát hiện khi kiểm chứng.** Test CSP mới bắt được vi phạm thật trong production build: `script-src eval`.
+**Finding during verification.** The new CSP test caught a real violation in the production build: `script-src eval`.
 
-- **Nguồn:** Zod v4 gọi thử `Function("")` để JIT-compile parser (`zod/v4/core/util.js:218`, `allowsEval`).
-- **Hậu quả:** validation vẫn chạy (Zod tự chuyển sang cách khác), nhưng mỗi lần mở `/tasks` lại sinh một báo cáo vi phạm.
-- **Sửa:** dùng API chính thức `config({ jitless: true })` trong `src/instrumentation-client.ts`, chỉ chạy ở trình duyệt.
-- **Chi phí đo được:** `/dashboard` từ 187.3 → 192.6 KiB gzip (+5.3 KiB); `/tasks` +1.1 KiB.
+- **Source:** Zod v4 tries calling `Function("")` to JIT-compile parsers (`zod/v4/core/util.js:218`, `allowsEval`).
+- **Consequence:** validation still works (Zod falls back to another approach on its own), but every visit to `/tasks` produced a violation report.
+- **Fix:** use the official API `config({ jitless: true })` in `src/instrumentation-client.ts`, which runs only in the browser.
+- **Measured cost:** `/dashboard` from 187.3 → 192.6 KiB gzip (+5.3 KiB); `/tasks` +1.1 KiB.
 
-**Kiểm chứng:**
+**Verification:**
 
-- `e2e/security.spec.ts`: có header và không có `X-Powered-By`; theme script vẫn chạy dưới CSP.
-- Fixture `e2e/fixtures.ts`: **mọi** test fail nếu có `securitypolicyviolation`. Mutation test: bỏ cấu hình `jitless` thì 7 test fail với "CSP violation: script-src eval"; khôi phục thì 9/9 pass.
-- 9/9 E2E pass ở production (`CI=1`) và ở `pnpm dev`. Server Action (POST), theme toggle, dialog và điều hướng đều không bị chặn.
+- `e2e/security.spec.ts`: headers are present and `X-Powered-By` is absent; the theme script still runs under the CSP.
+- Fixture `e2e/fixtures.ts`: **every** test fails if there is a `securitypolicyviolation`. Mutation test: removing the `jitless` config makes 7 tests fail with "CSP violation: script-src eval"; restoring it gives 9/9 passing.
+- 9/9 E2E pass in production (`CI=1`) and in `pnpm dev`. Server Actions (POST), theme toggle, dialogs and navigation are all not blocked.
 
-**Giới hạn còn lại:** `'unsafe-inline'` cho script nghĩa là CSP **không** ngăn được inline XSS. Lớp bảo vệ chính vẫn là React tự escape nội dung; `dangerouslySetInnerHTML` duy nhất trong app là một hằng số. Muốn CSP chặt hơn phải tắt PPR để dùng nonce, hoặc thử SRI (experimental).
+**Remaining limitation:** `'unsafe-inline'` for scripts means the CSP does **not** prevent inline XSS. The main line of defence is still React's automatic escaping of content; the only `dangerouslySetInnerHTML` in the app is a constant. A stricter CSP would require turning off PPR to use nonces, or trying SRI (experimental).
 
-## 5. CI và release
+## 5. CI and release
 
-| Yêu cầu                                        | Trạng thái          | Bằng chứng                                                                                              |
-| ---------------------------------------------- | ------------------- | ------------------------------------------------------------------------------------------------------- |
-| Node khớp `.nvmrc`                             | ✅                  | `actions/setup-node@v7` với `node-version-file: .nvmrc` (24)                                            |
-| pnpm khớp `packageManager`                     | ✅                  | `pnpm/action-setup@v6` không đặt `version`, nên đọc `pnpm@12.11.2`                                      |
-| Cài với frozen lockfile                        | ✅ local            | Bản copy sạch: "Lockfile is up to date"                                                                 |
-| Typecheck, ESLint, unit test, build, Storybook | ✅ local            | Bản copy sạch: tất cả exit 0 (sau khi sửa `public/`)                                                    |
-| Playwright                                     | ✅ local            | Bản copy sạch: 9/9. Bước `--with-deps` chỉ có tác dụng trên Linux, chưa kiểm chứng trên ubuntu          |
-| Cú pháp workflow                               | ✅                  | `actionlint` 1.7.12: không có lỗi                                                                       |
-| Bảo mật workflow                               | ✅ (đã sửa)         | Thêm `permissions: contents: read`                                                                      |
-| Chạy trên GitHub Actions                       | ❌ **NOT VERIFIED** | Không có `git remote`; chỉ 17 file được track; `pnpm-lock.yaml`, `.nvmrc` và toàn bộ `src/` chưa commit |
+| Requirement                                     | Status              | Evidence                                                                                               |
+| ----------------------------------------------- | ------------------- | ------------------------------------------------------------------------------------------------------ |
+| Node matches `.nvmrc`                           | ✅                  | `actions/setup-node@v7` with `node-version-file: .nvmrc` (24)                                          |
+| pnpm matches `packageManager`                   | ✅                  | `pnpm/action-setup@v6` does not set `version`, so it reads `pnpm@12.11.2`                              |
+| Install with frozen lockfile                    | ✅ local            | Clean copy: "Lockfile is up to date"                                                                   |
+| Typecheck, ESLint, unit tests, build, Storybook | ✅ local            | Clean copy: all exit 0 (after fixing `public/`)                                                        |
+| Playwright                                      | ✅ local            | Clean copy: 9/9. The `--with-deps` step only has an effect on Linux, not verified on ubuntu            |
+| Workflow syntax                                 | ✅                  | `actionlint` 1.7.12: no errors                                                                         |
+| Workflow security                               | ✅ (fixed)          | Added `permissions: contents: read`                                                                    |
+| Runs on GitHub Actions                          | ❌ **NOT VERIFIED** | No `git remote`; only 17 files tracked; `pnpm-lock.yaml`, `.nvmrc` and all of `src/` are not committed |
 
-**Lỗi CI thật đã tìm và sửa:** thư mục `public/` chỉ còn rỗng sau khi xóa các SVG mẫu. Git không lưu thư mục rỗng, nên bản clone không có `public/`, và `storybook build` fail với "no such directory: ./public" (do `staticDirs`). Khi chạy local lỗi bị che vì thư mục rỗng vẫn tồn tại. Đã thêm `public/.gitkeep`.
+**Real CI bug found and fixed:** the `public/` folder became empty after removing the sample SVGs. Git does not store empty folders, so a clone has no `public/`, and `storybook build` fails with "no such directory: ./public" (because of `staticDirs`). When running locally the bug was hidden because the empty folder still existed. Added `public/.gitkeep`.
 
-**Khuyến nghị (chưa làm):** pin action theo commit SHA để chống tấn công supply chain qua tag; cân nhắc dùng Dependabot hoặc Renovate để cập nhật.
+**Recommendations (not done):** pin actions by commit SHA to protect against supply-chain attacks via tags; consider using Dependabot or Renovate for updates.
 
 ## 6. Dependency stability
 
-- **Không thêm package nào.** Không có Zustand, TanStack Query, Axios hay thư viện auth. Storybook được giữ.
-- Không nâng major nào. Không dùng override.
-- **SEC-6:** vẫn chỉ theo dõi (dev-only, chưa có bản vá). CI chạy `pnpm audit --prod` (không có lỗ hổng), nên không bị fail vì lỗ hổng chỉ nằm ở dev.
-- `zod/v4/core` là subpath của package `zod` đã cài sẵn, không phải dependency mới.
+- **No packages added.** No Zustand, TanStack Query, Axios or auth library. Storybook is kept.
+- No major upgrades. No overrides used.
+- **SEC-6:** still only monitored (dev-only, no patch available yet). CI runs `pnpm audit --prod` (no vulnerabilities), so it does not fail because of vulnerabilities that exist only in dev.
+- `zod/v4/core` is a subpath of the already installed `zod` package, not a new dependency.
 
 ## 7. Template reusability
 
-| Bước                        | Kết quả | Bằng chứng                                                                                                    |
-| --------------------------- | ------- | ------------------------------------------------------------------------------------------------------------- |
-| 1. Clone                    | ✅      | Bản copy sạch chỉ có các file git sẽ commit                                                                   |
-| 2. Cấu hình env             | ✅      | `.env.example` có đủ biến, kể cả `AUTH_ALLOW_ANONYMOUS`; env sai thì server dừng khi khởi động                |
-| 3. Chạy app                 | ✅      | `pnpm dev` và `pnpm start`; E2E 9/9 ở cả hai                                                                  |
-| 4. Xóa demo Task            | ✅      | Làm đúng README bước 7 trên bản copy: typecheck, lint, 35 unit test, build, Storybook và 2 E2E chung đều pass |
-| 5. Thêm feature             | ✅      | Code tutorial Product (đã cập nhật auth) qua typecheck và lint                                                |
-| 6. Nối REST backend         | ✅      | Mock backend: fail-closed mặc định; đọc và ghi hoạt động khi có session                                       |
-| 7. Dùng lại component chung | ✅      | Sau khi xóa demo, `src/components` và `src/lib` không còn tham chiếu nào tới "task"                           |
-| 8. Test và build production | ✅      | Mục 9                                                                                                         |
+| Step                             | Result | Evidence                                                                                                                     |
+| -------------------------------- | ------ | ---------------------------------------------------------------------------------------------------------------------------- |
+| 1. Clone                         | ✅     | The clean copy contains only the files git would commit                                                                      |
+| 2. Configure env                 | ✅     | `.env.example` has all variables, including `AUTH_ALLOW_ANONYMOUS`; with a wrong env the server stops at startup             |
+| 3. Run the app                   | ✅     | `pnpm dev` and `pnpm start`; E2E 9/9 in both                                                                                 |
+| 4. Remove the demo Task          | ✅     | Followed README step 7 exactly on the copy: typecheck, lint, 35 unit tests, build, Storybook and 2 shared E2E tests all pass |
+| 5. Add a feature                 | ✅     | The Product tutorial code (updated for auth) passes typecheck and lint                                                       |
+| 6. Connect a REST backend        | ✅     | Mock backend: fail-closed by default; reads and writes work when there is a session                                          |
+| 7. Reuse shared components       | ✅     | After removing the demo, `src/components` and `src/lib` have no remaining references to "task"                               |
+| 8. Test and build for production | ✅     | Section 9                                                                                                                    |
 
-Thay đổi để giữ template trung lập: CSP check được chuyển thành fixture dùng chung thay vì đi theo luồng Task, nên **không bị hỏng khi xóa demo**.
+Change made to keep the template neutral: the CSP check was turned into a shared fixture instead of following the Task flow, so it **does not break when the demo is removed**.
 
-## 8. Rủi ro còn lại
+## 8. Remaining risks
 
-| ID  | Mức             | Rủi ro                                                                                                         | Giảm thiểu                                                                                        |
-| --- | --------------- | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| R1  | Blocker deploy  | Chưa có auth thật: REST mode từ chối mọi thứ cho tới khi hiện thực `resolveSession()`                          | Có chủ đích (fail-closed); contract và ví dụ trong `docs/api-integration.md` §8                   |
-| R2  | Blocker release | CI chưa chạy trên GitHub; code chưa commit                                                                     | Commit (bao gồm `pnpm-lock.yaml`, `.nvmrc`, `public/.gitkeep`), push, xác nhận 2 job xanh         |
-| R3  | P2              | Bật `AUTH_ALLOW_ANONYMOUS=true` sai chỗ sẽ trao toàn quyền `API_TOKEN` cho mọi visitor                         | Mặc định `false`; có cảnh báo khi khởi động; giá trị không hợp lệ thì dừng; có ghi trong tài liệu |
-| R4  | P2              | Provider không trả `accessToken` thì backend coi mọi user là service account (IDOR theo thiết kế)              | Có ghi trong docblock của `auth-provider.ts` và docs §8                                           |
-| R5  | P3              | CSP có `'unsafe-inline'`, không chặn được inline XSS                                                           | React tự escape; nonce không tương thích với PPR (mục 4)                                          |
-| R6  | P3              | Không có `upgrade-insecure-requests` và HSTS                                                                   | Đặt ở tầng HTTPS (proxy hoặc CDN)                                                                 |
-| R7  | P3              | Không có rate limiting cho Server Actions                                                                      | Tài liệu Next khuyến nghị cho thao tác tốn kém; đặt ở gateway hoặc backend                        |
-| R8  | P3              | REST fail-closed chưa có E2E tự động (mới có unit test, mutation test và kiểm chứng thủ công trên trình duyệt) | Có thể thêm project Playwright thứ hai với mock backend (`next start` trên cổng riêng)            |
-| R9  | P3              | SEC-6 (`braces`, dev-only), ESLint 9 deprecated (DEP-2)                                                        | Theo dõi upstream                                                                                 |
-| R10 | P3              | Demo mode nếu deploy công khai thì ai cũng sửa được dữ liệu demo (tối đa 500 task, nằm trong RAM)              | Chấp nhận được cho demo; production phải dùng `API_MODE=rest`                                     |
+| ID  | Level           | Risk                                                                                                                 | Mitigation                                                                                          |
+| --- | --------------- | -------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| R1  | Deploy blocker  | No real auth yet: REST mode rejects everything until `resolveSession()` is implemented                               | Intentional (fail-closed); contract and example in `docs/api-integration.md` §8                     |
+| R2  | Release blocker | CI has not run on GitHub; code is not committed                                                                      | Commit (including `pnpm-lock.yaml`, `.nvmrc`, `public/.gitkeep`), push, confirm both jobs are green |
+| R3  | P2              | Enabling `AUTH_ALLOW_ANONYMOUS=true` in the wrong place gives every visitor the full permissions of `API_TOKEN`      | Default `false`; a warning at startup; an invalid value stops startup; documented                   |
+| R4  | P2              | If the provider does not return `accessToken`, the backend treats every user as the service account (IDOR by design) | Documented in the `auth-provider.ts` docblock and docs §8                                           |
+| R5  | P3              | CSP has `'unsafe-inline'`, cannot block inline XSS                                                                   | React escapes automatically; nonces are incompatible with PPR (section 4)                           |
+| R6  | P3              | No `upgrade-insecure-requests` and no HSTS                                                                           | Set at the HTTPS layer (proxy or CDN)                                                               |
+| R7  | P3              | No rate limiting for Server Actions                                                                                  | The Next docs recommend it for expensive operations; set it at the gateway or backend               |
+| R8  | P3              | REST fail-closed has no automated E2E yet (only unit tests, mutation tests and manual browser verification)          | Could add a second Playwright project with a mock backend (`next start` on a separate port)         |
+| R9  | P3              | SEC-6 (`braces`, dev-only), ESLint 9 deprecated (DEP-2)                                                              | Monitor upstream                                                                                    |
+| R10 | P3              | If demo mode is deployed publicly, anyone can modify the demo data (max 500 tasks, held in RAM)                      | Acceptable for a demo; production must use `API_MODE=rest`                                          |
 
-## 9. Kết quả kiểm tra (đã chạy thật, sau mọi thay đổi)
+## 9. Check results (actually run, after all changes)
 
-| Lệnh                                               | Kết quả                                                           |
-| -------------------------------------------------- | ----------------------------------------------------------------- |
-| `pnpm install --frozen-lockfile`                   | Lockfile is up to date                                            |
-| `pnpm audit --prod`                                | No known vulnerabilities found                                    |
-| `pnpm audit`                                       | 1 high (SEC-6, dev-only)                                          |
-| `pnpm typecheck`, `pnpm lint`, `pnpm format:check` | Pass                                                              |
-| `pnpm test`                                        | **85/85** (15 file)                                               |
-| `pnpm test:coverage`                               | 70.3% statements (trước: 65.2%)                                   |
-| `pnpm build`                                       | Pass; `/dashboard`, `/tasks` vẫn là `◐` Partial Prerender         |
-| `CI=1 pnpm test:e2e` (production)                  | **9/9**, 0 vi phạm CSP                                            |
-| `pnpm test:e2e` (dev)                              | **9/9**                                                           |
-| `pnpm build-storybook`                             | Pass                                                              |
-| `actionlint .github/workflows/ci.yml`              | Không có lỗi                                                      |
-| CI giả lập trên bản copy sạch                      | Mọi bước exit 0                                                   |
-| Xóa demo trên bản copy sạch                        | Mọi kiểm tra pass                                                 |
-| Build ở REST mode, bật anonymous lúc runtime       | Không có cảnh báo `[auth]` lúc build; trang hiển thị dữ liệu thật |
-| GitHub Actions remote                              | **NOT VERIFIED**                                                  |
+| Command                                            | Result                                                       |
+| -------------------------------------------------- | ------------------------------------------------------------ |
+| `pnpm install --frozen-lockfile`                   | Lockfile is up to date                                       |
+| `pnpm audit --prod`                                | No known vulnerabilities found                               |
+| `pnpm audit`                                       | 1 high (SEC-6, dev-only)                                     |
+| `pnpm typecheck`, `pnpm lint`, `pnpm format:check` | Pass                                                         |
+| `pnpm test`                                        | **85/85** (15 files)                                         |
+| `pnpm test:coverage`                               | 70.3% statements (before: 65.2%)                             |
+| `pnpm build`                                       | Pass; `/dashboard`, `/tasks` are still `◐` Partial Prerender |
+| `CI=1 pnpm test:e2e` (production)                  | **9/9**, 0 CSP violations                                    |
+| `pnpm test:e2e` (dev)                              | **9/9**                                                      |
+| `pnpm build-storybook`                             | Pass                                                         |
+| `actionlint .github/workflows/ci.yml`              | No errors                                                    |
+| Simulated CI on a clean copy                       | Every step exits 0                                           |
+| Removing the demo on a clean copy                  | All checks pass                                              |
+| Build in REST mode, enable anonymous at runtime    | No `[auth]` warning at build time; the page shows real data  |
+| GitHub Actions remote                              | **NOT VERIFIED**                                             |
 
 ## 10. Final Production-Readiness Verdict
 
-- **Template tái sử dụng: SẴN SÀNG.** Kiến trúc, dependency, bảo mật mặc định (fail-closed, CSP), CI và tài liệu đều đã được kiểm chứng; việc xóa demo đã được thử thật.
-- **Một ứng dụng production dựng từ template: CHƯA SẴN SÀNG** cho tới khi:
-  1. Hiện thực `resolveSession()` với nhà cung cấp đăng nhập thật, và trả `accessToken` (R1, R4).
-  2. Commit, push và xác nhận GitHub Actions xanh (R2).
-  3. Đặt HTTPS, HSTS và rate limiting ở tầng hạ tầng (R6, R7).
+- **Reusable template: READY.** Architecture, dependencies, secure defaults (fail-closed, CSP), CI and documentation have all been verified; removing the demo has actually been tried.
+- **A production application built from the template: NOT READY** until:
+  1. `resolveSession()` is implemented with a real sign-in provider, and returns `accessToken` (R1, R4).
+  2. Commit, push and confirm GitHub Actions is green (R2).
+  3. HTTPS, HSTS and rate limiting are set up at the infrastructure layer (R6, R7).
 
-Rủi ro authorization nghiêm trọng (visitor ẩn danh dùng `API_TOKEN`) **không còn mặc định**. Nó chỉ quay lại nếu có người cố ý bật `AUTH_ALLOW_ANONYMOUS=true`.
+The serious authorization risk (anonymous visitors using `API_TOKEN`) is **no longer the default**. It only comes back if someone deliberately enables `AUTH_ALLOW_ANONYMOUS=true`.

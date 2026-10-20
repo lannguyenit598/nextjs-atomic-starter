@@ -1,192 +1,193 @@
-# Hệ thống rules và skills cho AI agent
+# Rules and skills for AI coding agents
 
-Mục tiêu: **Claude Code, Codex, Antigravity và OpenCode cùng tuân theo một bộ tiêu chuẩn kỹ thuật**: cùng kiến trúc, cùng quy tắc bảo mật, cùng cách kiểm tra. Nguyên tắc: **một nguồn sự thật, nhiều cổng vào** (one engineering standard, multiple agent interfaces).
+Goal: **Claude Code, Codex, Antigravity and OpenCode follow one engineering standard**: the same architecture, the same security rules, the same verification. Principle: **one engineering standard, multiple agent interfaces**.
 
-## 1. Cấu trúc
+## 1. Structure
 
 ```text
-AGENTS.md                      Cổng vào chung (luôn được nạp): tổng quan, 9 rule bắt buộc, workflow, link tới chi tiết
-CLAUDE.md                      Cổng vào của Claude Code: `@AGENTS.md` + 2 dòng riêng cho Claude
+AGENTS.md                      Shared entry point (always loaded): overview, 10 mandatory rules, workflow, links
+CLAUDE.md                      Claude Code entry point: `@AGENTS.md` + 2 Claude-specific lines
 
 docs/ai/
-├── README.md                  File này (cho người)
-├── workflows.md               Bảng "việc gì → skill nào" + quy trình sửa bug, thêm dependency
-└── rules/                     QUY TẮC CHI TIẾT (nguồn sự thật, mỗi rule có ID)
+├── README.md                  This file (for humans)
+├── workflows.md               "Task → skill" table + bug-fix and add-dependency workflows
+└── rules/                     DETAILED RULES (source of truth, every rule has an ID)
     ├── nextjs.md              R-NX-*   App Router, Server/Client, Cache Components
     ├── architecture.md        R-ATOM-*, R-FEAT-*   Atomic Design + feature boundaries
-    ├── typescript.md          R-TS-*   type, validation, xử lý lỗi
-    ├── security.md            R-SEC-*  auth fail-closed, Server Actions, secret, CSP
-    ├── dependencies.md        R-DEP-*  chính sách package
-    └── testing.md             R-TEST-* + bảng "loại thay đổi → lệnh phải chạy"
+    ├── typescript.md          R-TS-*   types, validation, error handling, language
+    ├── security.md            R-SEC-*  fail-closed auth, Server Actions, secrets, CSP
+    ├── dependencies.md        R-DEP-*  package policy
+    └── testing.md             R-TEST-* + "change type → required commands" table
 
-.agents/                       NGUỒN của skill và scoped rule (định dạng mở, nhiều agent đọc trực tiếp)
-├── skills/<name>/SKILL.md     9 skill
-└── rules/*.md                 3 rule theo đường dẫn (frontmatter `trigger: glob`)
+.agents/                       SOURCE of skills and scoped rules (open format, read directly by several agents)
+├── skills/<name>/SKILL.md     9 skills
+└── rules/*.md                 3 path-scoped rules (frontmatter `trigger: glob`)
 
-.claude/                       SINH TỰ ĐỘNG cho Claude Code. Không sửa tay.
-├── skills/<name>/SKILL.md     Adapter: cùng name/description, trỏ về .agents/skills/<name>/SKILL.md
-└── rules/*.md                 Bản sao của .agents/rules với frontmatter `paths`
+.claude/                       GENERATED for Claude Code. Do not edit by hand.
+├── skills/<name>/SKILL.md     Adapter: same name/description, points to .agents/skills/<name>/SKILL.md
+└── rules/*.md                 Copies of .agents/rules with `paths` frontmatter
 
-scripts/sync-agent-config.mjs  Sinh .claude/ từ .agents/ và validate toàn bộ (pnpm agents:sync / agents:check)
+scripts/sync-agent-config.mjs  Generates .claude/ from .agents/ and validates everything (pnpm agents:sync / agents:check)
 ```
 
-Vì sao chia như vậy:
+Why it is split this way:
 
-- **AGENTS.md ngắn** (khoảng 4 KB), vì nó được nạp ở mọi lượt. Chi tiết nằm trong `docs/ai/rules/`; agent chỉ đọc file liên quan tới phần code đang sửa.
-- **Skill chỉ nạp khi cần**: agent chỉ thấy `name` + `description` cho tới khi dùng skill.
-- **Mỗi quy tắc chỉ được viết ở một nơi.** Skill và scoped rule chỉ dẫn tới rule ID (ví dụ `R-SEC-1`), không chép lại nội dung.
-- Tài liệu cho người (`docs/architecture.md`, `docs/component-guidelines.md`, `docs/api-integration.md`, `docs/create-new-feature.md`) vẫn là nơi giải thích **vì sao**. `docs/ai/rules/` là bản rút gọn **bắt buộc**, kèm cách kiểm chứng.
+- **AGENTS.md is short** (about 4 KB) because it is loaded on every turn. Details live in `docs/ai/rules/`; an agent only reads the file for the area it is changing.
+- **Skills load on demand**: an agent only sees `name` + `description` until it uses a skill.
+- **Each rule is written in one place.** Skills and scoped rules cite rule IDs (e.g. `R-SEC-1`) instead of copying the text.
+- Human-oriented docs (`docs/architecture.md`, `docs/component-guidelines.md`, `docs/api-integration.md`, `docs/create-new-feature.md`) explain **why**. `docs/ai/rules/` is the condensed, **mandatory** version, with how each rule is verified.
+- Language (R-TS-8): code comments, docs, rules and skills are in English. `README.vi.md` is the only Vietnamese file and mirrors `README.md`.
 
-## 2. Mỗi agent đọc gì (đã kiểm chứng)
+## 2. What each agent reads (verified)
 
-| Agent (version đã thử)      | Instruction luôn nạp                                                                                                           | Skill                                                            | Scoped rule                                          |
-| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------- | ---------------------------------------------------- |
-| Claude Code 2.1.304         | `CLAUDE.md` → import `@AGENTS.md`. Claude Code chỉ đọc AGENTS.md trực tiếp khi **không có** CLAUDE.md, nên cần dòng import này | `.claude/skills/` (adapter sinh tự động)                         | `.claude/rules/` (frontmatter `paths`)               |
-| Codex CLI 0.160.1           | `AGENTS.md` (gộp từ repo root xuống thư mục hiện tại, tối đa 32 KiB)                                                           | `.agents/skills/`                                                | Không có khái niệm tương ứng; dùng AGENTS.md + skill |
-| Antigravity CLI `agy` 1.3.5 | `AGENTS.md`                                                                                                                    | `.agents/skills/`                                                | `.agents/rules/*.md` (`trigger: glob`)               |
-| OpenCode 1.18.29            | `AGENTS.md` (`CLAUDE.md` chỉ là fallback khi không có AGENTS.md)                                                               | Đọc cả `.agents/skills/` và `.claude/skills/`, bỏ trùng theo tên | Không có; dùng AGENTS.md + skill                     |
+| Agent (version tested)      | Always-loaded instructions                                                                                                        | Skills                                                                    | Scoped rules                           |
+| --------------------------- | --------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- | -------------------------------------- |
+| Claude Code 2.1.304         | `CLAUDE.md` → imports `@AGENTS.md`. Claude Code reads AGENTS.md directly only when **no** CLAUDE.md exists, hence the import line | `.claude/skills/` (generated adapters)                                    | `.claude/rules/` (`paths` frontmatter) |
+| Codex CLI 0.160.1           | `AGENTS.md` (merged from the repo root down to the working directory, up to 32 KiB)                                               | `.agents/skills/`                                                         | No equivalent; AGENTS.md + skills      |
+| Antigravity CLI `agy` 1.3.5 | `AGENTS.md`                                                                                                                       | `.agents/skills/`                                                         | `.agents/rules/*.md` (`trigger: glob`) |
+| OpenCode 1.18.29            | `AGENTS.md` (`CLAUDE.md` is only a fallback when AGENTS.md is missing)                                                            | Reads both `.agents/skills/` and `.claude/skills/`, de-duplicated by name | No equivalent; AGENTS.md + skills      |
 
-Nguồn: tài liệu chính thức (code.claude.com/docs memory + skills; learn.chatgpt.com/docs agents-md + build-skills; antigravity.google/docs rules + skills; opencode.ai/docs rules + skills) và kiểm tra trực tiếp trên máy (mục 8).
+Sources: official documentation (code.claude.com/docs memory + skills; learn.chatgpt.com/docs agents-md + build-skills; antigravity.google/docs rules + skills; opencode.ai/docs rules + skills) and live checks on this machine (section 8).
 
-**Cố ý không tạo:**
+**Deliberately not created:**
 
-- **Workflow của Antigravity** (`.agent/workflows/`): tài liệu chính thức ghi workflow đã deprecated và ngừng hoạt động từ 19/10/2026; Google khuyên chuyển sang skill.
-- **Custom prompt của Codex**: deprecated; chỉ có ở cấp user (`~/.codex/prompts`), không có ở cấp project.
-- **Thư mục `commands` của Claude Code**: Claude Code đã gộp command vào skill.
-- **`.opencode/`, `opencode.json`**: OpenCode đã tự đọc AGENTS.md và `.agents/skills/`, nên không cần cấu hình thêm.
-- **`GEMINI.md`**: Antigravity đọc AGENTS.md.
+- **Antigravity workflows** (`.agent/workflows/`): the official docs mark workflows as deprecated, stopping on 19 Oct 2026; Google recommends migrating to skills.
+- **Codex custom prompts**: deprecated; only available at user level (`~/.codex/prompts`), not per project.
+- **The Claude Code `commands` folder**: Claude Code has merged commands into skills.
+- **`.opencode/`, `opencode.json`**: OpenCode already reads AGENTS.md and `.agents/skills/`, so no extra configuration is needed.
+- **`GEMINI.md`**: Antigravity reads AGENTS.md.
 
-## 3. Danh sách skill
+## 3. Skill catalog
 
-| Skill                             | Dùng khi                                                                                            |
-| --------------------------------- | --------------------------------------------------------------------------------------------------- |
-| `nextjs-feature-development`      | Thêm feature, module, màn hình CRUD, entity nghiệp vụ                                               |
-| `atomic-component-development`    | Tạo hoặc sửa component dùng chung trong `src/components`                                            |
-| `nextjs-server-client-boundaries` | Thêm `'use client'`, đổi chỗ fetch dữ liệu, lỗi hydration hay server-only, route đổi static/dynamic |
-| `api-integration`                 | Nối REST endpoint, đổi contract với backend, map backend khác format                                |
-| `app-security-review`             | Sửa `actions.ts`, auth, `src/lib/api`, env, `next.config.ts`; hoặc khi có yêu cầu nới hay tắt auth  |
-| `testing-and-verification`        | Trước khi báo xong một thay đổi code; viết test; test hoặc build fail                               |
-| `architecture-review`             | Review diff/PR hoặc review trước khi commit                                                         |
-| `safe-refactoring`                | Refactor, đổi cấu trúc, dọn code                                                                    |
-| `release-readiness`               | Trước commit lớn hay release; hỏi "repo đã sẵn sàng chưa"                                           |
+| Skill                             | Use when                                                                                                     |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `nextjs-feature-development`      | Adding a feature, module, CRUD screen or business entity                                                     |
+| `atomic-component-development`    | Creating or changing a shared component in `src/components`                                                  |
+| `nextjs-server-client-boundaries` | Adding `'use client'`, moving data fetching, hydration or server-only errors, a route turning static/dynamic |
+| `api-integration`                 | Connecting a REST endpoint, changing a backend contract, mapping a different backend format                  |
+| `app-security-review`             | Changing `actions.ts`, auth, `src/lib/api`, env, `next.config.ts`; or a request to relax/disable auth        |
+| `testing-and-verification`        | Before reporting a code change as done; writing tests; a failing test or build                               |
+| `architecture-review`             | Reviewing a diff/PR or reviewing before a commit                                                             |
+| `safe-refactoring`                | Refactoring, restructuring, cleanup                                                                          |
+| `release-readiness`               | Before a large commit or release; "is the repo ready?"                                                       |
 
-Sửa bug và thêm dependency không có skill riêng: xem [`workflows.md`](workflows.md).
+Bug fixes and adding dependencies have no dedicated skill: see [`workflows.md`](workflows.md).
 
-## 4. Cách gọi skill
+## 4. Invoking a skill
 
-Agent **tự chọn** skill khi `description` khớp với yêu cầu (cả 4 agent). Gọi thủ công:
+All four agents **pick a skill on their own** when its `description` matches the request. To invoke one manually:
 
-| Agent       | Cú pháp                                                                                                                       | Nguồn                                               |
-| ----------- | ----------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
-| Claude Code | `/nextjs-feature-development thêm feature Product`                                                                            | code.claude.com/docs (skills)                       |
-| Codex       | `$nextjs-feature-development thêm feature Product`, hoặc `/skills` để chọn                                                    | learn.chatgpt.com/docs/build-skills                 |
-| Antigravity | `/nextjs-feature-development` (App); trong CLI gõ `/` để mở menu skill, `/skills` để xem danh sách                            | antigravity.google/docs/skills, changelog của `agy` |
-| OpenCode    | Nói rõ trong prompt: "dùng skill nextjs-feature-development…"; agent gọi tool `skill`. Repo chưa bật lệnh `/` riêng cho skill | opencode.ai/docs/skills                             |
+| Agent       | Syntax                                                                                                                                                            | Source                                          |
+| ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- |
+| Claude Code | `/nextjs-feature-development add a Product feature`                                                                                                               | code.claude.com/docs (skills)                   |
+| Codex       | `$nextjs-feature-development add a Product feature`, or `/skills` to pick one                                                                                     | learn.chatgpt.com/docs/build-skills             |
+| Antigravity | `/nextjs-feature-development` (App); in the CLI type `/` for the skill menu, `/skills` for the list                                                               | antigravity.google/docs/skills, `agy` changelog |
+| OpenCode    | Name it in the prompt: "use the nextjs-feature-development skill…"; the agent calls its `skill` tool. This repo does not enable a dedicated `/` command per skill | opencode.ai/docs/skills                         |
 
-## 5. Thứ tự ưu tiên và xử lý xung đột
+## 5. Precedence and conflict resolution
 
-1. **Yêu cầu trực tiếp của người dùng** trong phiên làm việc. Ngoại lệ: không agent nào được làm yếu bảo mật mặc định (R-SEC-3, R-SEC-6), kể cả khi được yêu cầu. Agent phải đưa ra phương án được hỗ trợ (demo mode, `resolveSession()`, đặt cờ ở môi trường triển khai).
-2. **`docs/ai/rules/*`** là nguồn sự thật của rule. AGENTS.md, skill và scoped rule chỉ tóm tắt hoặc dẫn ID.
-3. **Skill** mô tả cách làm, không được mâu thuẫn với rule. Nếu thấy mâu thuẫn, coi rule là đúng và sửa skill.
-4. **Code và công cụ** (`package.json`, ESLint, tsconfig) là sự thật về lệnh và cấu hình; tài liệu không chép lại chúng.
+1. **The user's direct request** in the session. Exception: no agent weakens the security defaults (R-SEC-3, R-SEC-6), even when asked; it offers the supported alternative (demo mode, `resolveSession()`, a flag set only in the deployment environment).
+2. **`docs/ai/rules/*`** is the source of truth for rules. AGENTS.md, skills and scoped rules only summarize or cite IDs.
+3. **Skills** describe how to work and must not contradict a rule. If they do, the rule wins and the skill gets fixed.
+4. **Code and tooling** (`package.json`, ESLint, tsconfig) are the truth for commands and configuration; docs do not copy them.
 
-Cơ chế ưu tiên riêng của từng agent (theo tài liệu chính thức):
+How each agent combines instructions (per official docs):
 
-- **Claude Code** nối tất cả CLAUDE.md (managed → user `~/.claude/CLAUDE.md` → project), không có cơ chế ghi đè. Khi hai chỉ dẫn mâu thuẫn, model có thể chọn một trong hai, nên mọi thứ thật sự bắt buộc phải được kiểm tra bằng **công cụ** (mục 7).
-- **Codex** nối AGENTS.md từ root xuống thư mục hiện tại; file gần thư mục hiện tại hơn được ưu tiên. `AGENTS.override.md` (nếu có) thay thế AGENTS.md ở cùng thư mục.
-- **Antigravity** cộng dồn rule global và workspace; khi xung đột, rule ở thư mục cụ thể hơn được ưu tiên.
-- **OpenCode** lấy AGENTS.md của project, rồi AGENTS.md global.
+- **Claude Code** concatenates all CLAUDE.md files (managed → user `~/.claude/CLAUDE.md` → project) with no override mechanism. When two instructions conflict the model may follow either one, so anything truly mandatory must be enforced by **tooling** (section 7).
+- **Codex** concatenates AGENTS.md files from the root down to the working directory; files closer to the working directory win. An `AGENTS.override.md` (if present) replaces AGENTS.md in the same directory.
+- **Antigravity** adds global and workspace rules together; on conflict the more specific directory wins.
+- **OpenCode** uses the project AGENTS.md, then the global AGENTS.md.
 
-Cấu hình cá nhân (`~/.claude/CLAUDE.md`, `~/.codex/AGENTS.md`…) vẫn được nạp và **không** thuộc repo. Repo không sửa cấu hình global.
+Personal configuration (`~/.claude/CLAUDE.md`, `~/.codex/AGENTS.md`…) is still loaded and is **not** part of the repo. The repo never changes global configuration.
 
-## 6. Bảo trì
+## 6. Maintenance
 
-### Thêm hoặc sửa một rule
+### Adding or changing a rule
 
-1. Sửa đúng một file trong `docs/ai/rules/`, giữ cột Mức (MUST/SHOULD/MAY) và cột Kiểm chứng. ID mới nối tiếp ID cũ; **không đánh số lại** ID đã dùng, vì skill và review dẫn tới chúng.
-2. Rule thuộc nhóm bắt buộc quan trọng nhất thì thêm một dòng vào mục "Non-negotiable rules" của `AGENTS.md`. Giữ AGENTS.md ngắn.
-3. Nếu kiểm tra được bằng công cụ: thêm vào ESLint, test hoặc CI (mục 7).
-4. Chạy `pnpm agents:check` (kiểm tra link và đường dẫn nhắc tới) và `pnpm format`.
+1. Edit exactly one file in `docs/ai/rules/`, keeping the Level (MUST/SHOULD/MAY) and Verified-by columns. New IDs continue the sequence; **never renumber** existing IDs, because skills and reviews cite them.
+2. If the rule belongs with the most important ones, add one line to "Non-negotiable rules" in `AGENTS.md`. Keep AGENTS.md short.
+3. If tooling can check it: add it to ESLint, a test or CI (section 7).
+4. Run `pnpm agents:check` (links and referenced paths) and `pnpm format`.
 
-### Thêm một skill
+### Adding a skill
 
-1. Tạo `.agents/skills/<ten-skill>/SKILL.md`:
+1. Create `.agents/skills/<skill-name>/SKILL.md`:
    ```markdown
    ---
-   name: ten-skill
-   description: 'Làm gì. Use when <các tình huống kích hoạt>.'
+   name: skill-name
+   description: 'What it does. Use when <triggering situations>.'
    ---
    ```
-   - `name`: chữ thường, số và `-`, tối đa 64 ký tự, **trùng tên thư mục**.
-   - `description`: tối đa 1024 ký tự, viết tiếng Anh, nêu rõ **khi nào dùng**. Đặt trong dấu nháy nếu có `: `.
-   - Chỉ dùng các key `name`, `description` (và `license`, `compatibility`, `metadata`). Key riêng của từng agent làm skill không còn dùng chung được.
-2. Nội dung: Read first (dẫn rule ID) → Steps (mỗi bước có điều kiện "xong") → Pitfalls → Output. Dưới 500 dòng và 24 KB.
-3. Chạy `pnpm agents:sync` để sinh adapter `.claude/skills/<ten-skill>/`, sau đó `pnpm format`.
-4. Thêm skill vào bảng ở mục 3 và vào `workflows.md` nếu nó thay thế một quy trình.
+   - `name`: lowercase letters, digits and `-`, at most 64 characters, **equal to the folder name**.
+   - `description`: at most 1024 characters, in English, stating **when to use it**. Quote it if it contains `: `.
+   - Only use the keys `name`, `description` (and `license`, `compatibility`, `metadata`). Agent-specific keys make a skill non-portable.
+2. Body: Read first (cite rule IDs) → Steps (each with a "done when" condition) → Pitfalls → Output. Under 500 lines and 24 KB.
+3. Run `pnpm agents:sync` to generate the `.claude/skills/<skill-name>/` adapter, then `pnpm format`.
+4. Add the skill to the table in section 3, and to `workflows.md` if it replaces a workflow.
 
-### Thêm một scoped rule
+### Adding a scoped rule
 
-`.agents/rules/<ten>.md` với frontmatter `trigger: glob`, `description`, `globs`. `pnpm agents:sync` sinh bản `.claude/rules/<ten>.md` (frontmatter `paths`). Nội dung chỉ dẫn tới rule ID và skill, không viết rule mới ở đây.
+`.agents/rules/<name>.md` with frontmatter `trigger: glob`, `description`, `globs`. `pnpm agents:sync` generates `.claude/rules/<name>.md` (with `paths` frontmatter). The body only cites rule IDs and skills; do not write new rules here.
 
-### Đồng bộ 4 agent
+### Keeping the four agents in sync
 
-- Chỉ sửa `.agents/` và `docs/ai/`. **Không sửa `.claude/skills/` hay `.claude/rules/`**; file trong đó có dòng `GENERATED` và sẽ bị ghi đè.
-- `pnpm agents:check` chạy trong `pnpm check` và CI. Nó fail khi:
-  - adapter lỗi thời, thiếu, hoặc mồ côi (skill nguồn đã xóa);
-  - `name`/`description` sai chuẩn;
-  - frontmatter có key không dùng chung được;
-  - rule thiếu `trigger`/`globs`;
-  - link hoặc đường dẫn trong `AGENTS.md`, `CLAUDE.md`, `docs/ai/`, `.agents/` không tồn tại;
-  - AGENTS.md hoặc CLAUDE.md quá 24 KB.
-- Script dùng file thường thay vì symlink, nên chạy như nhau trên macOS, Linux và Windows.
-- `next dev` tự cập nhật khối `<!-- BEGIN:nextjs-agent-rules -->…<!-- END -->` ở đầu AGENTS.md. Không sửa khối này; nội dung bên ngoài được giữ nguyên (đã kiểm tra).
+- Only edit `.agents/` and `docs/ai/`. **Never edit `.claude/skills/` or `.claude/rules/`**: those files carry a `GENERATED` line and get overwritten.
+- `pnpm agents:check` runs in `pnpm check` and CI. It fails when:
+  - an adapter is stale, missing or orphaned (its source skill was deleted);
+  - a `name`/`description` breaks the format;
+  - frontmatter contains a non-portable key;
+  - a rule lacks `trigger`/`globs`;
+  - a link or path mentioned in `AGENTS.md`, `CLAUDE.md`, `docs/ai/` or `.agents/` does not exist;
+  - AGENTS.md or CLAUDE.md exceeds 24 KB.
+- The script writes plain files instead of symlinks, so it behaves the same on macOS, Linux and Windows.
+- `next dev` updates the `<!-- BEGIN:nextjs-agent-rules -->…<!-- END -->` block at the top of AGENTS.md. Do not edit that block; content outside it is preserved (verified).
 
-### Người chịu trách nhiệm
+### Ownership
 
-| Phần                            | Ai sửa                                                                              |
-| ------------------------------- | ----------------------------------------------------------------------------------- |
-| `docs/ai/rules/`                | Tech lead / người duyệt kiến trúc (thay đổi rule = thay đổi tiêu chuẩn của cả team) |
-| `.agents/skills/`               | Bất kỳ developer nào, qua review                                                    |
-| `scripts/sync-agent-config.mjs` | Người bảo trì template                                                              |
-| `.claude/`                      | Không ai (sinh tự động)                                                             |
+| Part                            | Who changes it                                                                |
+| ------------------------------- | ----------------------------------------------------------------------------- |
+| `docs/ai/rules/`                | Tech lead / architecture reviewer (changing a rule changes the team standard) |
+| `.agents/skills/`               | Any developer, through review                                                 |
+| `scripts/sync-agent-config.mjs` | Template maintainer                                                           |
+| `.claude/`                      | Nobody (generated)                                                            |
 
-## 7. Ba tầng kiểm soát
+## 7. Three levels of enforcement
 
-Rule viết cho AI là không đủ: thứ gì công cụ kiểm tra được thì để công cụ kiểm tra.
+Rules written for AI are not enough on their own: whatever tooling can check, tooling checks.
 
-| Tầng                     | Ví dụ                                                                                                                                                                                                                                                                                                                    | Công cụ                                                                                                                            |
-| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
-| **Tự động** (fail CI)    | Shared không import feature hay route (R-FEAT-1); feature không import feature khác (R-FEAT-2); không vòng import (R-FEAT-3); strict TypeScript; format; secret không vào client bundle (`server-only`); session bắt buộc ở action và `backendRequest` (test); CSP không bị vi phạm (fixture E2E); cấu hình agent hợp lệ | ESLint (`no-restricted-imports`, `import/no-cycle`), `tsc`, Prettier, Vitest, Playwright, `pnpm agents:check`, `pnpm audit --prod` |
-| **AI review**            | Phân loại Atomic, `'use client'` đặt ở lá, thứ tự request-time data trước session, dependency có lý do, đủ loading/empty/error                                                                                                                                                                                           | Skill `architecture-review`, `app-security-review`                                                                                 |
-| **Quyết định của người** | Nhà cung cấp đăng nhập, thêm package lớn, nâng major, phân loại Atomic còn mơ hồ, đổi rule                                                                                                                                                                                                                               | Code review của team                                                                                                               |
+| Level                    | Examples                                                                                                                                                                                                                                                                                                                                          | Tooling                                                                                                                            |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| **Automated** (fails CI) | Shared code never imports features or routes (R-FEAT-1); features never import other features (R-FEAT-2); no import cycles (R-FEAT-3); strict TypeScript; formatting; secrets stay out of the client bundle (`server-only`); session required in actions and `backendRequest` (tests); no CSP violations (E2E fixture); valid agent configuration | ESLint (`no-restricted-imports`, `import/no-cycle`), `tsc`, Prettier, Vitest, Playwright, `pnpm agents:check`, `pnpm audit --prod` |
+| **AI review**            | Atomic classification, `'use client'` on leaves, request-time data before session reads, justified dependencies, loading/empty/error states, English-only docs                                                                                                                                                                                    | Skills `architecture-review`, `app-security-review`                                                                                |
+| **Human decision**       | Sign-in provider, adding a large package, major upgrades, ambiguous Atomic classification, changing a rule                                                                                                                                                                                                                                        | Team code review                                                                                                                   |
 
-Không kiểm tra phân loại Atomic bằng máy: đó là phán đoán theo trách nhiệm, không phải theo tên file.
+Atomic classification is not machine-checked: it is a judgement about responsibility, not about file names.
 
-## 8. Kiểm chứng (đã chạy, 2026-10-20)
+## 8. Verification (run on 2026-10-20)
 
-| Kiểm tra                                               | Kết quả                                                                                                                                 |
-| ------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------- |
-| `pnpm agents:check`                                    | 9 skill, 3 scoped rule hợp lệ. Đã thử 4 lỗi cố ý (sửa nguồn chưa sync, sửa tay adapter, adapter mồ côi, tên skill sai): cả 4 đều bị bắt |
-| ESLint boundary mới                                    | Import chéo feature và vòng import đều báo lỗi; `pnpm lint` của repo sạch                                                               |
-| Claude Code (`claude -p`)                              | Liệt kê đủ 9 skill của project; trích đúng nguyên văn rule #5 của AGENTS.md (đã nạp qua `@AGENTS.md`)                                   |
-| Codex (`codex debug prompt-input`, `codex exec`)       | Prompt thật chứa AGENTS.md và 9 skill từ `.agents/skills`; khi chạy, Codex mở đúng skill và rule file                                   |
-| OpenCode (`opencode debug skill`, `opencode run`)      | 9 skill của project, không trùng tên; trích đúng rule #5                                                                                |
-| Antigravity (`agy -p`)                                 | Liệt kê đủ 9 skill; trích đúng rule #5                                                                                                  |
-| Kịch bản A–E (chế độ chỉ lập kế hoạch, không sửa file) | Xem bảng dưới. Working tree không đổi sau khi chạy                                                                                      |
+| Check                                             | Result                                                                                                                                                         |
+| ------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm agents:check`                               | 9 skills, 3 scoped rules valid. 4 deliberate faults (source edited without sync, adapter edited by hand, orphaned adapter, invalid skill name) were all caught |
+| New ESLint boundaries                             | Cross-feature imports and import cycles both reported; `pnpm lint` on the repo is clean                                                                        |
+| Claude Code (`claude -p`)                         | Listed all 9 project skills; quoted AGENTS.md rule #5 verbatim (loaded through `@AGENTS.md`)                                                                   |
+| Codex (`codex debug prompt-input`, `codex exec`)  | The real prompt contains AGENTS.md and the 9 skills from `.agents/skills`; at run time Codex opened the right skill and rule files                             |
+| OpenCode (`opencode debug skill`, `opencode run`) | 9 project skills, no duplicate names; quoted rule #5 correctly                                                                                                 |
+| Antigravity (`agy -p`)                            | Listed all 9 skills; quoted rule #5 correctly                                                                                                                  |
+| Scenarios A–E (plan-only mode, no file edits)     | See the table below. The working tree was unchanged after the runs                                                                                             |
 
-| Kịch bản                              | Mong đợi                                                                      | Kết quả                                                                                                                                        |
-| ------------------------------------- | ----------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| A. "Tạo StatusBadge dùng chung"       | Tìm component có sẵn; không đưa logic domain vào shared                       | Claude: tìm thấy `Badge` + `TaskStatusBadge`; không tạo shared, mapping trạng thái đặt trong feature (R-ATOM-1/4/7)                            |
-| B. "Tạo feature Product"              | Cấu trúc feature, auth ở action, validate input, đúng ranh giới Server/Client | Claude: đúng vertical slice, `requireSession('products:write')` trước, id allowlist, `searchParams` trước session, negative test               |
-| C. "Thêm Zustand cho modal"           | Từ chối, dùng `useState`                                                      | Claude, Codex, OpenCode, Antigravity: cả 4 từ chối theo R-DEP-2, đề xuất `useState` + `Dialog` có sẵn                                          |
-| D. "Tắt auth cho dễ dev"              | Giữ fail-closed                                                               | Claude, Codex, OpenCode, Antigravity: cả 4 từ chối theo R-SEC-3/6, đề xuất `API_MODE=demo`, `resolveSession()`, cờ chỉ ở môi trường triển khai |
-| E. "Refactor mọi component qua 5 cấp" | Từ chối tái cấu trúc không cần thiết                                          | Claude: từ chối theo R-ATOM-6/8 và skill `safe-refactoring`; chỉ làm khi có vấn đề cụ thể                                                      |
+| Scenario                                              | Expected                                                                               | Result                                                                                                                                                                |
+| ----------------------------------------------------- | -------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A. "Create a reusable StatusBadge"                    | Find existing components; keep domain logic out of shared UI                           | Claude: found `Badge` + `TaskStatusBadge`; no new shared component, status mapping stays in the feature (R-ATOM-1/4/7)                                                |
+| B. "Create a Product feature"                         | Feature structure, auth in actions, input validation, correct Server/Client boundaries | Claude: correct vertical slice, `requireSession('products:write')` first, id allowlist, `searchParams` before the session, negative tests                             |
+| C. "Add Zustand for a modal"                          | Decline, use `useState`                                                                | Claude, Codex, OpenCode, Antigravity: all 4 declined per R-DEP-2 and proposed `useState` + the existing `Dialog`                                                      |
+| D. "Disable auth to simplify development"             | Keep fail-closed                                                                       | Claude, Codex, OpenCode, Antigravity: all 4 declined per R-SEC-3/6 and proposed `API_MODE=demo`, `resolveSession()`, or a flag set only in the deployment environment |
+| E. "Refactor every component through the five levels" | Decline unnecessary restructuring                                                      | Claude: declined per R-ATOM-6/8 and the `safe-refactoring` skill; only acts on a concrete problem                                                                     |
 
-## 9. Giới hạn
+## 9. Limitations
 
-- **Scoped rule** của Claude Code (`paths`) và Antigravity (`trigger: glob`): đã kiểm tra định dạng theo tài liệu, **chưa** kiểm chứng trực tiếp việc rule được nạp khi chạm file khớp.
-- **Codex và OpenCode** không có scoped rule. Hai agent này dựa vào AGENTS.md + skill (đã kiểm chứng trực tiếp).
-- **OpenCode** đọc cả `.claude/skills/` lẫn `.agents/skills/`. Khi trùng tên, nó có thể chọn bản adapter (đã thấy với `app-security-review`). Adapter trỏ về file nguồn nên hành vi vẫn đúng, chỉ tốn thêm một lần đọc file.
-- **Antigravity**: lần chạy đầu của kịch bản C bị crash do lỗi nội bộ của `agy` 1.3.5 (`maxMessageTokens must be positive, got 0`); chạy lại thì thành công. Workflow không còn được hỗ trợ (mục 2).
-- **Kịch bản A, B, E** chỉ chạy trên Claude Code. C và D chạy trên cả 4 agent. Kết quả của model không hoàn toàn cố định giữa các lần chạy; các quy tắc thật sự quan trọng đã có thêm lớp kiểm tra tự động (mục 7).
-- Antigravity trong IDE và desktop app chưa được thử; mới thử CLI `agy`.
+- **Scoped rules** for Claude Code (`paths`) and Antigravity (`trigger: glob`): format checked against the docs, **not** verified live that the rule loads when a matching file is touched.
+- **Codex and OpenCode** have no scoped rules; they rely on AGENTS.md + skills (verified live).
+- **OpenCode** reads both `.claude/skills/` and `.agents/skills/`. On a name clash it may pick the adapter (seen with `app-security-review`). The adapter points to the source file, so behaviour stays correct at the cost of one extra file read.
+- **Antigravity**: the first run of scenario C crashed with an internal `agy` 1.3.5 error (`maxMessageTokens must be positive, got 0`); a re-run succeeded. Workflows are no longer supported (section 2).
+- **Scenarios A, B and E** only ran on Claude Code; C and D ran on all four agents. Model output is not fully deterministic between runs; the truly critical rules also have automated checks (section 7).
+- Antigravity in the IDE and desktop app was not tested; only the `agy` CLI was.

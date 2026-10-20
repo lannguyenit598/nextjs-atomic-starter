@@ -10,7 +10,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 # Atomic Design Next.js Starter: agent instructions
 
-Reusable Next.js 16 (App Router, Cache Components) + React 19 + strict TypeScript + Tailwind 4 template for admin, internal, SaaS and REST-backed apps. These instructions bind every agent (Claude Code, Codex, Antigravity, OpenCode). Human docs are in Vietnamese under `docs/`.
+Reusable Next.js 16 (App Router, Cache Components) + React 19 + strict TypeScript + Tailwind 4 template for admin, internal, SaaS and REST-backed apps. These instructions bind every agent (Claude Code, Codex, Antigravity, OpenCode). Human docs are under `docs/`.
 
 ## Architecture
 
@@ -36,6 +36,7 @@ Atomic Design is a composition model, not a mandatory five-layer hierarchy; an A
 7. Data access only through the feature repository; no `fetch` in components (R-FEAT-4).
 8. Existing dependencies and native APIs first; a new package needs a written justification (R-DEP-1…4).
 9. Report only checks you actually ran (R-TEST-1). Commit or push only when explicitly asked.
+10. Write code comments, docs, rules and skills in English; `README.vi.md` is the only Vietnamese file and mirrors `README.md` (R-TS-8).
 
 ## Workflow
 

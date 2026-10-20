@@ -1,82 +1,82 @@
-# Kiến trúc
+# Architecture
 
-> Nguồn tham khảo: [Atomic Design, Brad Frost, chương 2](https://atomicdesign.bradfrost.com/chapter-2/) và [Atomic Web Design (2013)](https://bradfrost.com/blog/post/atomic-web-design/). Cả hai trang đã được đọc khi thiết kế template này.
+> References: [Atomic Design, Brad Frost, chapter 2](https://atomicdesign.bradfrost.com/chapter-2/) and [Atomic Web Design (2013)](https://bradfrost.com/blog/post/atomic-web-design/). Both pages were read while designing this template.
 
-## 1. Vì sao chọn Hybrid Atomic Design + Feature-Based?
+## 1. Why Hybrid Atomic Design + Feature-Based?
 
-Mỗi cách tổ chức giải quyết một vấn đề khác nhau:
+Each way of organizing code solves a different problem:
 
-| Câu hỏi                                                              | Cách trả lời                               |
-| -------------------------------------------------------------------- | ------------------------------------------ |
-| "Nút bấm, ô input, bảng... trông thế nào và ghép với nhau ra sao?"   | **Atomic Design** (`src/components/`)      |
-| "Chức năng _Task_ gồm những gì: dữ liệu, validation, API, màn hình?" | **Feature module** (`src/features/tasks/`) |
-| "URL nào hiển thị màn hình nào?"                                     | **Next.js App Router** (`src/app/`)        |
+| Question                                                                      | Answer                                     |
+| ----------------------------------------------------------------------------- | ------------------------------------------ |
+| "What do buttons, inputs, tables... look like, and how do they fit together?" | **Atomic Design** (`src/components/`)      |
+| "What does the _Task_ feature consist of: data, validation, API, screens?"    | **Feature module** (`src/features/tasks/`) |
+| "Which URL shows which screen?"                                               | **Next.js App Router** (`src/app/`)        |
 
-Nếu áp Atomic Design cho **toàn bộ** ứng dụng, mọi thứ sẽ bị ép vào 5 cấp. Ví dụ `TaskCard` thành "molecule", `TaskForm` thành "organism". Kết quả là code nghiệp vụ của một chức năng bị rải khắp `components/`, và muốn xóa hay sửa một feature phải đi lục nhiều thư mục.
+If you apply Atomic Design to the **whole** application, everything gets forced into 5 levels. For example, `TaskCard` becomes a "molecule" and `TaskForm` becomes an "organism". The result is that the business code of one feature gets scattered all over `components/`, and to delete or change a feature you have to dig through many folders.
 
-Nếu **chỉ** dùng feature folder, mỗi feature lại tự viết Button và Dialog của riêng nó, và UI dần mất nhất quán.
+If you **only** use feature folders, each feature writes its own Button and Dialog, and the UI gradually loses consistency.
 
-Kết hợp hai cách:
+Combining the two approaches:
 
-- `components/` chứa UI **không biết gì về nghiệp vụ**, dùng lại được ở mọi dự án.
-- `features/` chứa mọi thứ thuộc về một chức năng.
+- `components/` holds UI that **knows nothing about the business domain** and can be reused in any project.
+- `features/` holds everything that belongs to one feature.
 
-So với backend: `components/` giống một thư viện dùng chung (như `commons-lang`), còn `features/` giống một module hoặc bounded context.
+Compared with the backend: `components/` is like a shared library (such as `commons-lang`), while `features/` is like a module or a bounded context.
 
-## 2. Năm cấp của Atomic Design
+## 2. The five levels of Atomic Design
 
-Theo Brad Frost, Atomic Design là **mô hình tư duy**, không phải quy trình tuyến tính hay giáo điều. Ông viết: "Atomic design is not a linear process" và "not rigid dogma".
+According to Brad Frost, Atomic Design is a **mental model**, not a linear process or a dogma. He writes: "Atomic design is not a linear process" and "not rigid dogma".
 
-| Cấp           | Định nghĩa (Brad Frost)                                                                                       | Trong template          | Ví dụ                                                                                                                                                                         |
-| ------------- | ------------------------------------------------------------------------------------------------------------- | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Atoms**     | Phần tử UI cơ bản, không chia nhỏ hơn mà vẫn còn hữu dụng được                                                | `components/atoms/`     | `Button`, `Input`, `Select`, `Textarea`, `Checkbox`, `Label`, `Badge`, `Spinner`, `Skeleton`, `Separator`, `Card`                                                             |
-| **Molecules** | Nhóm nhỏ các atom hoạt động như một đơn vị, làm một việc                                                      | `components/molecules/` | `FormField` (Label + control + error), `SearchInput`, `Dialog`, `ConfirmationDialog`, `Pagination`, `EmptyState`, `Alert`, `StatCard`, `PageHeader`, `NavMenu`, `ThemeToggle` |
-| **Organisms** | Phần giao diện tương đối phức tạp, tạo thành một khu vực riêng                                                | `components/organisms/` | `AppSidebar`, `AppHeader`, `MobileNav`, `DataTable`                                                                                                                           |
-| **Templates** | Bố cục cấp trang, đặt các component vào layout; tập trung vào **cấu trúc nội dung**, không phải nội dung cuối | `components/templates/` | `DashboardTemplate` (khung sidebar + header + main, nhận các slot)                                                                                                            |
-| **Pages**     | Template cụ thể với **nội dung thật**; nơi kiểm tra design system                                             | `app/**/page.tsx`       | `app/(app)/tasks/page.tsx`                                                                                                                                                    |
+| Level         | Definition (Brad Frost)                                                                                                | In the template         | Examples                                                                                                                                                                      |
+| ------------- | ---------------------------------------------------------------------------------------------------------------------- | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Atoms**     | Basic UI elements that cannot be broken down further and still be useful                                               | `components/atoms/`     | `Button`, `Input`, `Select`, `Textarea`, `Checkbox`, `Label`, `Badge`, `Spinner`, `Skeleton`, `Separator`, `Card`                                                             |
+| **Molecules** | Small groups of atoms that work together as a unit and do one thing                                                    | `components/molecules/` | `FormField` (Label + control + error), `SearchInput`, `Dialog`, `ConfirmationDialog`, `Pagination`, `EmptyState`, `Alert`, `StatCard`, `PageHeader`, `NavMenu`, `ThemeToggle` |
+| **Organisms** | Relatively complex parts of the interface that form a distinct section                                                 | `components/organisms/` | `AppSidebar`, `AppHeader`, `MobileNav`, `DataTable`                                                                                                                           |
+| **Templates** | Page-level layouts that place components into a layout; they focus on the **content structure**, not the final content | `components/templates/` | `DashboardTemplate` (sidebar + header + main frame, accepts slots)                                                                                                            |
+| **Pages**     | Specific templates with **real content**; where the design system is tested                                            | `app/**/page.tsx`       | `app/(app)/tasks/page.tsx`                                                                                                                                                    |
 
-Một số lựa chọn phân loại cần giải thích:
+Some classification choices need explaining:
 
-- **`Card` là atom.** Bản thân nó chỉ là một khung bề mặt (border, nền, bo góc). Các phần con `CardHeader` và `CardTitle` chỉ là các khe đặt nội dung.
-- **`Dialog` là molecule, không phải atom.** Nó ghép tiêu đề, nút đóng (`Button`) và hành vi modal. `ConfirmationDialog` là molecule được dựng từ `Dialog`; đây là **composition**, không tạo thêm một modal riêng.
-- **`DataTable` là organism.** Nó là một khu vực hoàn chỉnh của trang. Nó vẫn là UI thuần, vì feature quyết định nội dung từng ô (`TaskTable` truyền các `columns` vào).
-- **Không có Typography component.** Các class Tailwind (`text-2xl font-semibold`) cùng `PageHeader` và `CardTitle` đã đủ. Một component `<Heading>` chỉ bọc lại vài class sẽ là wrapper thừa.
-- **Không bắt buộc đi qua đủ 5 cấp.** `EmptyState` dùng thẳng trong page; `TaskTable` dùng thẳng `DataTable`.
+- **`Card` is an atom.** By itself it is only a surface frame (border, background, rounded corners). Its sub-parts `CardHeader` and `CardTitle` are just slots for content.
+- **`Dialog` is a molecule, not an atom.** It combines a title, a close button (`Button`) and modal behaviour. `ConfirmationDialog` is a molecule built from `Dialog`; this is **composition**, not a separate new modal.
+- **`DataTable` is an organism.** It is a complete section of the page. It is still pure UI, because the feature decides the content of each cell (`TaskTable` passes in the `columns`).
+- **There is no Typography component.** Tailwind classes (`text-2xl font-semibold`) together with `PageHeader` and `CardTitle` are enough. A `<Heading>` component that only wraps a few classes would be a redundant wrapper.
+- **You do not have to go through all 5 levels.** `EmptyState` is used directly in a page; `TaskTable` uses `DataTable` directly.
 
 ### Template ≠ `layout.tsx`, Page ≠ `page.tsx`
 
-| Khái niệm                                 | Là gì                                                                                        | Biết gì                                                                               |
-| ----------------------------------------- | -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| `DashboardTemplate` (Atomic Template)     | React component thuần, chỉ có **slot** (`sidebar`, `header`, `children`)                     | Không biết route, dữ liệu hay menu cụ thể. Xem được trong Storybook với nội dung giả. |
-| `app/(app)/layout.tsx` (Next.js layout)   | File **routing**. Next.js tự bọc mọi route trong `(app)/` bằng file này.                     | Lấy `mainNavigation` và `siteConfig`, **lắp** organisms vào slot của template         |
-| `app/(app)/tasks/page.tsx` (Next.js page) | Entry point của URL `/tasks`. Về mặt Atomic, đây chính là **Page**: template + dữ liệu thật. | Đọc `searchParams`, gọi repository, ghép các feature component                        |
+| Concept                                   | What it is                                                                                        | What it knows                                                                                        |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `DashboardTemplate` (Atomic Template)     | A pure React component with only **slots** (`sidebar`, `header`, `children`)                      | Knows nothing about routes, data or the specific menu. Can be viewed in Storybook with fake content. |
+| `app/(app)/layout.tsx` (Next.js layout)   | A **routing** file. Next.js automatically wraps every route in `(app)/` with this file.           | Gets `mainNavigation` and `siteConfig`, and **plugs** organisms into the template's slots            |
+| `app/(app)/tasks/page.tsx` (Next.js page) | The entry point of the `/tasks` URL. In Atomic terms, this is the **Page**: template + real data. | Reads `searchParams`, calls the repository, combines the feature components                          |
 
-Tóm lại: Next.js `layout.tsx` và `page.tsx` là **cơ chế routing**. Atomic Template và Page là **khái niệm thiết kế**. Ở template này, `page.tsx` đóng vai trò Atomic Page, còn `layout.tsx` **sử dụng** Atomic Template chứ không phải là nó.
+In short: Next.js `layout.tsx` and `page.tsx` are **routing mechanisms**. Atomic Template and Page are **design concepts**. In this template, `page.tsx` plays the role of the Atomic Page, while `layout.tsx` **uses** the Atomic Template rather than being it.
 
-### Phần mở rộng ngoài phương pháp gốc
+### Extensions beyond the original method
 
-Brad Frost không bàn tới data fetching, routing hay nghiệp vụ, vì Atomic Design "has nothing to do with web-specific subjects like CSS or JavaScript architecture". Các phần sau là bổ sung của template:
+Brad Frost does not discuss data fetching, routing or business logic, because Atomic Design "has nothing to do with web-specific subjects like CSS or JavaScript architecture". The following are additions made by this template:
 
-1. **Feature modules** cho nghiệp vụ (mục 1).
-2. **Design tokens** (màu, radius, shadow, font) nằm trong CSS variables ở `globals.css`. Brad xếp "color palettes, fonts" vào nhóm atoms trừu tượng; ở đây chúng là token, không phải component.
-3. **Quy tắc phụ thuộc** được ESLint kiểm tra tự động (mục 4).
+1. **Feature modules** for business logic (section 1).
+2. **Design tokens** (colours, radius, shadow, font) live in CSS variables in `globals.css`. Brad puts "color palettes, fonts" in the group of abstract atoms; here they are tokens, not components.
+3. **Dependency rules** checked automatically by ESLint (section 4).
 
-## 3. Trách nhiệm của từng layer
+## 3. Responsibilities of each layer
 
 ```text
-src/app/          Routing, layout, metadata, loading/error boundary. Ghép feature + template.
-                  KHÔNG chứa component tái sử dụng hay business logic.
-src/features/X/   Mọi thứ của nghiệp vụ X: schema, type, service (data access),
-                  Server Action, UI riêng của X.
-src/components/   Design system. Chỉ nhận dữ liệu qua props; không gọi API,
-                  không import feature.
-src/lib/          Hạ tầng: HTTP client, env, tiện ích. Không biết feature nào tồn tại.
-src/config/       Cấu hình app: menu, tên app.
+src/app/          Routing, layout, metadata, loading/error boundary. Combines features + templates.
+                  Does NOT contain reusable components or business logic.
+src/features/X/   Everything for business domain X: schema, types, service (data access),
+                  Server Actions, X's own UI.
+src/components/   Design system. Receives data only through props; does not call APIs,
+                  does not import features.
+src/lib/          Infrastructure: HTTP client, env, utilities. Does not know which features exist.
+src/config/       App configuration: menu, app name.
 ```
 
-## 4. Quy tắc phụ thuộc (Dependency rules)
+## 4. Dependency rules
 
-Mũi tên `A → B` nghĩa là "A được phép import B":
+An arrow `A → B` means "A is allowed to import B":
 
 ```mermaid
 flowchart TD
@@ -93,39 +93,39 @@ flowchart TD
     end
 ```
 
-- `components/**` và `lib/**` **không được** import `@/features/*` hay `@/app/*`. ESLint `no-restricted-imports` báo lỗi nếu vi phạm.
-- `features/**` không được import `@/app/*`.
-- Trong `components/`, cấp cao import cấp thấp (`molecules → atoms`), không làm ngược lại.
-- Feature A không nên import nội bộ feature B. Nếu cần dùng chung, hãy chuyển phần đó lên `components/` (nếu là UI) hoặc `lib/` (nếu là logic).
-- Không dùng barrel file (`index.ts` re-export). Barrel dễ kéo code server vào bundle client và dễ tạo vòng import.
+- `components/**` and `lib/**` **must not** import `@/features/*` or `@/app/*`. ESLint `no-restricted-imports` reports an error on violation.
+- `features/**` must not import `@/app/*`.
+- Inside `components/`, higher levels import lower levels (`molecules → atoms`), never the other way round.
+- Feature A should not import the internals of feature B. If something needs to be shared, move that part up to `components/` (if it is UI) or `lib/` (if it is logic).
+- Do not use barrel files (`index.ts` re-exports). Barrels easily pull server code into the client bundle and easily create import cycles.
 
-## 5. Server Components và Client Components
+## 5. Server Components and Client Components
 
-Mặc định mọi component là **Server Component**: chạy trên server, không gửi JavaScript xuống trình duyệt, được phép đọc dữ liệu trực tiếp.
+By default every component is a **Server Component**: it runs on the server, sends no JavaScript to the browser, and is allowed to read data directly.
 
-Chỉ thêm `'use client'` khi component cần ít nhất một trong các thứ sau: state (`useState`), effect, event handler, hoặc browser API.
+Only add `'use client'` when the component needs at least one of the following: state (`useState`), effects, event handlers, or browser APIs.
 
-| Client Component trong template                                                     | Vì sao cần client                            |
-| ----------------------------------------------------------------------------------- | -------------------------------------------- |
-| `Dialog`, `ConfirmationDialog`, `MobileNav`                                         | Gọi `showModal()`, quản lý state mở/đóng     |
-| `NavMenu`                                                                           | `usePathname()` để đánh dấu link đang active |
-| `ThemeToggle`                                                                       | Xử lý click, `localStorage`                  |
-| `TaskForm`, `TaskFormDialog`, `DeleteTaskButton`, `TaskStatusSelect`, `TaskFilters` | Form, tương tác, gọi Server Action           |
+| Client Components in the template                                                   | Why they need the client                    |
+| ----------------------------------------------------------------------------------- | ------------------------------------------- |
+| `Dialog`, `ConfirmationDialog`, `MobileNav`                                         | Call `showModal()`, manage open/close state |
+| `NavMenu`                                                                           | `usePathname()` to mark the active link     |
+| `ThemeToggle`                                                                       | Click handling, `localStorage`              |
+| `TaskForm`, `TaskFormDialog`, `DeleteTaskButton`, `TaskStatusSelect`, `TaskFilters` | Forms, interaction, calling Server Actions  |
 
-Mọi thứ còn lại là server: `Button`, `Card`, `DataTable`, `Pagination`, `TaskTable`, `TaskStats`, các page...
+Everything else is server: `Button`, `Card`, `DataTable`, `Pagination`, `TaskTable`, `TaskStats`, the pages...
 
-Các component như `Button` không có `'use client'`. Nếu được import từ Client Component, chúng sẽ chạy ở client; nếu không, chúng render ở server.
+Components such as `Button` do not have `'use client'`. If they are imported from a Client Component, they run on the client; otherwise, they render on the server.
 
-Một số quy tắc:
+Some rules:
 
-- **Giữ ranh giới client nhỏ.** `TaskTable` là server và chỉ các ô tương tác (`TaskStatusSelect`, các nút) là client.
-- **Props đi qua ranh giới phải serialize được.** Ví dụ: truyền `icon={<ListTodo />}` (một element) chứ không truyền `icon={ListTodo}` (một function).
-- **Secret chỉ nằm ở server.** `src/lib/env.ts` và `src/lib/api/backend.ts` có `import 'server-only'`. Nếu Client Component import chúng, **build sẽ fail**.
-- **Không thêm global state.** Filter, search và page đều nằm trên URL (`?q=&status=&page=`). Dữ liệu server lấy qua Server Components.
+- **Keep the client boundary small.** `TaskTable` is server, and only the interactive cells (`TaskStatusSelect`, the buttons) are client.
+- **Props crossing the boundary must be serializable.** For example: pass `icon={<ListTodo />}` (an element), not `icon={ListTodo}` (a function).
+- **Secrets stay on the server only.** `src/lib/env.ts` and `src/lib/api/backend.ts` have `import 'server-only'`. If a Client Component imports them, **the build fails**.
+- **Do not add global state.** Filter, search and page all live in the URL (`?q=&status=&page=`). Server data is fetched through Server Components.
 
-## 6. Luồng dữ liệu
+## 6. Data flow
 
-### Đọc (Read)
+### Read
 
 ```mermaid
 sequenceDiagram
@@ -134,22 +134,22 @@ sequenceDiagram
     participant R as taskRepository
     participant D as Demo store / REST backend
     B->>P: GET /tasks?q=ci&status=done
-    P-->>B: Static shell (PageHeader + skeleton), gửi ngay
-    P->>P: await searchParams, validate bằng Zod
+    P-->>B: Static shell (PageHeader + skeleton), sent immediately
+    P->>P: await searchParams, validate with Zod
     P->>R: list({ q, status, page, pageSize })
-    R->>D: in-memory filter, hoặc GET {API_BASE_URL}/tasks?...
+    R->>D: in-memory filter, or GET {API_BASE_URL}/tasks?...
     D-->>R: { items, total, page, pageSize }
-    R-->>P: TaskPage (đã validate bằng taskPageSchema)
-    P-->>B: Stream HTML của TaskTable + Pagination
+    R-->>P: TaskPage (validated with taskPageSchema)
+    P-->>B: Stream HTML of TaskTable + Pagination
 ```
 
-Next.js 16 bật **Cache Components**: phần tĩnh của trang được prerender sẵn, còn dữ liệu động stream vào trong `<Suspense>`.
+Next.js 16 enables **Cache Components**: the static part of the page is prerendered ahead of time, while dynamic data streams in inside `<Suspense>`.
 
-- Dữ liệu không có `'use cache'` luôn được đọc mới ở mỗi request.
-- Trang dashboard gọi `await connection()` để chắc chắn không bị "đóng băng" thành snapshot lúc build.
-- Muốn cache, xem `node_modules/next/dist/docs/01-app/01-getting-started/08-caching.md`.
+- Data without `'use cache'` is always read fresh on every request.
+- The dashboard page calls `await connection()` to make sure it does not get "frozen" into a build-time snapshot.
+- If you want caching, see `node_modules/next/dist/docs/01-app/01-getting-started/08-caching.md`.
 
-### Ghi (Mutation)
+### Write (Mutation)
 
 ```mermaid
 sequenceDiagram
@@ -158,22 +158,22 @@ sequenceDiagram
     participant A as createTaskAction (Server Action)
     participant R as taskRepository
     U->>F: Submit
-    F->>F: Validate bằng taskFormSchema (phản hồi nhanh)
-    F->>A: POST (Next.js tự xử lý)
-    A->>A: Validate LẠI bằng taskFormSchema (trust boundary)
+    F->>F: Validate with taskFormSchema (fast feedback)
+    F->>A: POST (handled by Next.js automatically)
+    A->>A: Validate AGAIN with taskFormSchema (trust boundary)
     A->>R: create(data)
     R-->>A: Task / ApiError
     A->>A: revalidatePath('/tasks', '/dashboard')
-    A-->>F: { ok: true } hoặc { ok: false, error, fieldErrors }
-    F-->>U: Đóng dialog, hoặc hiện lỗi trên từng field
+    A-->>F: { ok: true } or { ok: false, error, fieldErrors }
+    F-->>U: Close the dialog, or show errors on each field
 ```
 
-- **Server Action là public POST endpoint.** Ai cũng có thể gọi trực tiếp, nên phải validate lại input ở server và kiểm tra quyền (auth) ngay đầu mỗi action.
-- Action **trả về** lỗi (`ActionResult`) thay vì `throw`. Ở production, Next.js thay message của error bị throw bằng một message chung, nên UI sẽ không hiển thị được lỗi có ích.
-- Lỗi 401/403/5xx và lỗi không xác định được log ở server; người dùng chỉ thấy message chung.
-- Client gọi action qua `callAction()`: nếu chính request bị lỗi (mất mạng), lỗi vẫn hiện ngay trong form.
+- **A Server Action is a public POST endpoint.** Anyone can call it directly, so you must validate the input again on the server and check permissions (auth) at the very start of each action.
+- Actions **return** errors (`ActionResult`) instead of using `throw`. In production, Next.js replaces the message of a thrown error with a generic message, so the UI would not be able to show a useful error.
+- 401/403/5xx errors and unknown errors are logged on the server; the user only sees a generic message.
+- The client calls actions through `callAction()`: if the request itself fails (network loss), the error still shows up right in the form.
 
-### Cây component của màn hình Tasks
+### Component tree of the Tasks screen
 
 ```text
 app/(app)/layout.tsx
@@ -203,38 +203,38 @@ app/(app)/layout.tsx
 features/tasks/types.ts          TaskRepository (contract: list, stats, create, update, remove)
 features/tasks/services/
 ├── demo-task-repository.ts      Implementation 1: in-memory (demo, test)
-├── rest-task-repository.ts      Implementation 2: REST qua backendRequest()
-└── task-repository.ts           Chọn implementation theo API_MODE (server-only)
+├── rest-task-repository.ts      Implementation 2: REST via backendRequest()
+└── task-repository.ts           Picks the implementation based on API_MODE (server-only)
 ```
 
-UI và Server Action chỉ biết `taskRepository`. Khi chuyển từ demo sang backend thật, chỉ cần đổi env, không sửa component nào. Chi tiết: [api-integration.md](api-integration.md).
+The UI and Server Actions only know about `taskRepository`. When switching from the demo to a real backend, you only change env variables; no component needs to change. Details: [api-integration.md](api-integration.md).
 
-## 8. Theme và design tokens
+## 8. Theme and design tokens
 
-- **Token** nằm trong `src/app/globals.css`, ở `:root` (light) và `[data-theme='dark']`. Màu viết bằng OKLCH.
-- `@theme inline` biến token thành utility của Tailwind: `bg-primary`, `text-muted-foreground`, `rounded-md`, `shadow-sm`...
-- **Component không bao giờ hard-code màu.** Muốn đổi brand, chỉ cần sửa token.
-- `themeInitScript` chạy trong `<head>` trước khi trang hiển thị, nên không bị nháy sai theme. Script đọc `localStorage`, nếu không có thì theo cài đặt của hệ điều hành.
+- **Tokens** live in `src/app/globals.css`, in `:root` (light) and `[data-theme='dark']`. Colours are written in OKLCH.
+- `@theme inline` turns tokens into Tailwind utilities: `bg-primary`, `text-muted-foreground`, `rounded-md`, `shadow-sm`...
+- **Components never hard-code colours.** To change the brand, you only need to edit the tokens.
+- `themeInitScript` runs in `<head>` before the page is displayed, so there is no flash of the wrong theme. The script reads `localStorage`; if nothing is stored, it follows the operating system setting.
 
 ## 9. Authentication (contract, fail-closed)
 
-Template không chọn nhà cung cấp đăng nhập. Nó định nghĩa một contract và **từ chối mặc định** ở REST mode. Chi tiết: [api-integration.md](api-integration.md), mục 8.
+The template does not pick a sign-in provider. It defines a contract and **denies by default** in REST mode. Details: [api-integration.md](api-integration.md), section 8.
 
 ```mermaid
 flowchart LR
     SA[Server Action] -->|requireSession&#40;'x:write'&#41;| AUTH[lib/auth.ts]
     PG[Page] -->|getSession&#40;&#41;| AUTH
     BR[backendRequest] -->|requireSession&#40;&#41;| AUTH
-    AUTH -->|demo| DEMO[(session demo)]
-    AUTH -->|AUTH_ALLOW_ANONYMOUS| ANON[(session ẩn danh)]
-    AUTH -->|rest| PROV[lib/auth-provider.ts<br/>resolveSession&#40;&#41;<br/>mặc định: null]
+    AUTH -->|demo| DEMO[(demo session)]
+    AUTH -->|AUTH_ALLOW_ANONYMOUS| ANON[(anonymous session)]
+    AUTH -->|rest| PROV[lib/auth-provider.ts<br/>resolveSession&#40;&#41;<br/>default: null]
 ```
 
-| Việc                              | Nơi                                                                           |
-| --------------------------------- | ----------------------------------------------------------------------------- |
-| Đọc người dùng từ cookie hoặc IdP | `src/lib/auth-provider.ts` → `resolveSession()`                               |
-| Gửi token của user tới backend    | Trả `accessToken` trong `Session`; `backendRequest()` tự gửi đi               |
-| Kiểm tra quyền khi mutation       | `requireSession('<feature>:write')` đầu mỗi Server Action                     |
-| Màn hình login (chưa có)          | Route group `src/app/(auth)/login/page.tsx` + `AuthTemplate` khi tích hợp IdP |
+| Task                                 | Where                                                                                |
+| ------------------------------------ | ------------------------------------------------------------------------------------ |
+| Read the user from a cookie or IdP   | `src/lib/auth-provider.ts` → `resolveSession()`                                      |
+| Send the user's token to the backend | Return `accessToken` in `Session`; `backendRequest()` sends it automatically         |
+| Check permissions on mutation        | `requireSession('<feature>:write')` at the start of each Server Action               |
+| Login screen (not built yet)         | Route group `src/app/(auth)/login/page.tsx` + `AuthTemplate` when integrating an IdP |
 
-Đọc session là request-time API, nên phải nằm trong `<Suspense>` (đúng như hướng dẫn `02-guides/authentication-with-cache-components.md`). Template **không** dùng `unauthorized()` hay `forbidden()` vì chúng vẫn là experimental (`authInterrupts`).
+Reading the session is a request-time API, so it must be inside `<Suspense>` (exactly as the `02-guides/authentication-with-cache-components.md` guide says). The template does **not** use `unauthorized()` or `forbidden()` because they are still experimental (`authInterrupts`).

@@ -1,128 +1,128 @@
 # Audit: Next.js Atomic Design Starter
 
-- **Ngày audit:** 2026-10-20
-- **Phạm vi:** toàn bộ repository (`src/`, `e2e/`, `docs/`, cấu hình, CI)
-- **Phương pháp:** Audit trước, sửa sau
+- **Audit date:** 2026-10-20
+- **Scope:** the entire repository (`src/`, `e2e/`, `docs/`, configuration, CI)
+- **Method:** Audit first, fix later
 
-> **Lưu ý về tính độc lập.** Code của repository được viết trong cùng phiên làm việc với bản audit này. Để giảm thiên kiến tự đánh giá:
+> **Note on independence.** The repository code was written in the same working session as this audit. To reduce self-assessment bias:
 >
-> - Hai phần review được giao cho **subagent độc lập**: security, và correctness/accessibility.
-> - Accessibility được đo bằng **axe-core** trên trình duyệt thật.
-> - Mỗi kết luận bên dưới đều kèm bằng chứng: file:line hoặc lệnh đã chạy.
+> - Two review areas were assigned to **independent subagents**: security, and correctness/accessibility.
+> - Accessibility was measured with **axe-core** in a real browser.
+> - Every conclusion below comes with evidence: file:line or a command that was run.
 
 ## 1. Executive Summary
 
-**Đánh giá chung: PASS WITH ISSUES.**
+**Overall assessment: PASS WITH ISSUES.**
 
-Phần triển khai Next.js đúng với tài liệu chính thức của version đang cài (16.4.2). Kiến trúc Hybrid Atomic Design + Feature-Based rõ ràng và được ESLint kiểm tra tự động. Audit tìm ra:
+The Next.js implementation matches the official documentation of the installed version (16.4.2). The Hybrid Atomic Design + Feature-Based architecture is clear and is checked automatically by ESLint. The audit found:
 
-- **1 vấn đề P1** (thiếu authentication). Không sửa tự động, vì đây là quyết định thiết kế.
-- **4 vấn đề P2** (đều đã sửa):
-  - path traversal qua task id;
-  - color contrast không đạt WCAG AA;
-  - trang vượt phạm vi hiển thị sai empty state;
-  - filter bị lệch với URL.
-- **Một số vấn đề P3** (phần lớn đã sửa).
+- **1 P1 issue** (missing authentication). Not fixed automatically, because it is a design decision.
+- **4 P2 issues** (all fixed):
+  - path traversal via task id;
+  - color contrast does not meet WCAG AA;
+  - an out-of-range page shows an incorrect empty state;
+  - the filter gets out of sync with the URL.
+- **Several P3 issues** (mostly fixed).
 
-**Điểm mạnh**
+**Strengths**
 
-- Server Components là mặc định. Có 12 file `'use client'`, tất cả là lá tương tác hoặc error boundary (`error.tsx`, `global-error.tsx`).
-- Secret chỉ nằm ở server. `server-only` được dùng ở 5 module. Đã kiểm chứng: `.next/static` không chứa `API_TOKEN`, `API_BASE_URL` hay `Authorization`.
-- Mọi Server Action validate lại input bằng Zod, trả lỗi dạng giá trị, và gọi `revalidatePath`.
-- Không có circular dependency. Không có import ngược chiều (shared → feature). ESLint chặn tự động.
-- Repository pattern đổi được demo ↔ REST mà không sửa UI. Đã chạy thật với mock backend.
-- Bộ kiểm thử có ý nghĩa: 61 unit/component test và 7 E2E test.
+- Server Components are the default. There are 12 `'use client'` files, all of them interactive leaves or error boundaries (`error.tsx`, `global-error.tsx`).
+- Secrets live only on the server. `server-only` is used in 5 modules. Verified: `.next/static` does not contain `API_TOKEN`, `API_BASE_URL` or `Authorization`.
+- Every Server Action re-validates its input with Zod, returns errors as values, and calls `revalidatePath`.
+- No circular dependencies. No reverse-direction imports (shared → feature). ESLint blocks them automatically.
+- The repository pattern can switch demo ↔ REST without changing the UI. Actually run against a mock backend.
+- The test suite is meaningful: 61 unit/component tests and 7 E2E tests.
 
-**Rủi ro chính**
+**Main risks**
 
-1. **Chưa có auth.** Ở `API_MODE=rest`, mọi visitor dùng chung `API_TOKEN` của server (P1).
-2. Chưa có CSP và security headers (P3, khuyến nghị).
-3. CI chưa từng chạy trên GitHub; mới chỉ chạy các lệnh tương đương ở local.
+1. **No auth yet.** In `API_MODE=rest`, every visitor shares the server's `API_TOKEN` (P1).
+2. No CSP or security headers yet (P3, recommended).
+3. CI has never run on GitHub; only the equivalent commands have been run locally.
 
-**Mức sẵn sàng làm template:** **sẵn sàng** để bắt đầu dự án mới. **Chưa sẵn sàng** deploy công khai ở chế độ REST cho tới khi thêm auth.
+**Readiness as a template:** **ready** for starting a new project. **Not ready** for public deployment in REST mode until auth is added.
 
 ## 2. Environment and Tools
 
-| Hạng mục          | Giá trị (nguồn: `package.json`, `pnpm-lock.yaml`)                             |
-| ----------------- | ----------------------------------------------------------------------------- |
-| Next.js           | 16.4.2 (`cacheComponents: true`, `partialPrefetching: true`)                  |
-| React / React DOM | 19.3.0                                                                        |
-| TypeScript        | 5.9.3 (strict)                                                                |
-| Package manager   | pnpm 12.11.2 (Corepack, `packageManager`)                                     |
-| Styling           | Tailwind CSS 4.3.3, CSS variables, CVA                                        |
-| Form / validation | React Hook Form 7.90, Zod 4.6.7                                               |
-| State             | React local state + URL state; không có global store, không có TanStack Query |
-| Test              | Vitest 5.0.5 (jsdom 30), React Testing Library, Playwright 1.64               |
-| Docs UI           | Storybook 10.6.2 (`@storybook/nextjs-vite`)                                   |
-| CI                | `.github/workflows/ci.yml` (2 job: quality, e2e)                              |
+| Item              | Value (source: `package.json`, `pnpm-lock.yaml`)                  |
+| ----------------- | ----------------------------------------------------------------- |
+| Next.js           | 16.4.2 (`cacheComponents: true`, `partialPrefetching: true`)      |
+| React / React DOM | 19.3.0                                                            |
+| TypeScript        | 5.9.3 (strict)                                                    |
+| Package manager   | pnpm 12.11.2 (Corepack, `packageManager`)                         |
+| Styling           | Tailwind CSS 4.3.3, CSS variables, CVA                            |
+| Form / validation | React Hook Form 7.90, Zod 4.6.7                                   |
+| State             | React local state + URL state; no global store, no TanStack Query |
+| Test              | Vitest 5.0.5 (jsdom 30), React Testing Library, Playwright 1.64   |
+| Docs UI           | Storybook 10.6.2 (`@storybook/nextjs-vite`)                       |
+| CI                | `.github/workflows/ci.yml` (2 jobs: quality, e2e)                 |
 
-| Capability         | Có sẵn                                                                      | Đã dùng thực tế                                                                                                                                                   |
-| ------------------ | --------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Plugins            | Có (ponytail, superpowers, feature-dev, code-modernization, engineering...) | `feature-dev` (agent `code-reviewer`), `code-modernization` (agent `security-auditor`), `ponytail` (skill `ponytail-audit`)                                       |
-| Skills             | Có                                                                          | `ponytail:ponytail-audit` (rà over-engineering); `senior-engineer-mode` (quy tắc làm việc của phiên)                                                              |
-| Subagents          | Có                                                                          | `feature-dev:code-reviewer` (correctness + a11y UI), `code-modernization:security-auditor` (security + `pnpm audit`). Cả hai read-only, phạm vi không chồng nhau. |
-| MCP tools          | Có                                                                          | `context7` (tài liệu Next.js chính thức, snapshot v16.2.9), `semble` (code search)                                                                                |
-| Browser automation | Có                                                                          | Playwright: E2E, quét axe-core, kiểm tra focus trap, screenshot dark mode                                                                                         |
+| Capability         | Available                                                                    | Actually used                                                                                                                                                      |
+| ------------------ | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Plugins            | Yes (ponytail, superpowers, feature-dev, code-modernization, engineering...) | `feature-dev` (agent `code-reviewer`), `code-modernization` (agent `security-auditor`), `ponytail` (skill `ponytail-audit`)                                        |
+| Skills             | Yes                                                                          | `ponytail:ponytail-audit` (over-engineering sweep); `senior-engineer-mode` (working rules for the session)                                                         |
+| Subagents          | Yes                                                                          | `feature-dev:code-reviewer` (correctness + UI a11y), `code-modernization:security-auditor` (security + `pnpm audit`). Both read-only, with non-overlapping scopes. |
+| MCP tools          | Yes                                                                          | `context7` (official Next.js docs, snapshot v16.2.9), `semble` (code search)                                                                                       |
+| Browser automation | Yes                                                                          | Playwright: E2E, axe-core scans, focus trap checks, dark mode screenshots                                                                                          |
 
-**Truy cập tài liệu**
+**Documentation access**
 
-- **Next.js:** nguồn chính là tài liệu đi kèm package, đúng version 16.4.2: `node_modules/next/dist/docs/` (bản Markdown của https://nextjs.org/docs).
-  - Context7 chỉ có snapshot mới nhất là v16.2.9, nên chỉ dùng để đối chiếu (mục data-security, forms).
-- **Atomic Design:** đã đọc https://atomicdesign.bradfrost.com/chapter-2/ và https://bradfrost.com/blog/post/atomic-web-design/ trong phiên tạo repo (WebFetch).
+- **Next.js:** the primary source is the documentation bundled with the package, matching version 16.4.2: `node_modules/next/dist/docs/` (the Markdown version of https://nextjs.org/docs).
+  - Context7 only has the latest snapshot, v16.2.9, so it was used only for cross-checking (data-security, forms sections).
+- **Atomic Design:** read https://atomicdesign.bradfrost.com/chapter-2/ and https://bradfrost.com/blog/post/atomic-web-design/ during the session that created the repo (WebFetch).
 
 ## 3. Next.js Compliance Review
 
-Đường dẫn tài liệu bên dưới là tương đối so với `node_modules/next/dist/docs/01-app/`. URL công khai tương ứng nằm dưới https://nextjs.org/docs/app/.
+The documentation paths below are relative to `node_modules/next/dist/docs/01-app/`. The corresponding public URLs are under https://nextjs.org/docs/app/.
 
-| Hạng mục                         | Kết quả                           | Bằng chứng                                                                                                                                                                            | Tham chiếu                                                                                      |
-| -------------------------------- | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| App Router, route groups         | PASS                              | `src/app/(app)/layout.tsx:12`; group `(app)` chỉ dùng để chia layout, không ảnh hưởng URL                                                                                             | `03-api-reference/03-file-conventions/route-groups.md`                                          |
-| `page.tsx` / `layout.tsx`        | PASS                              | Page chỉ ghép UI và đọc dữ liệu; layout lắp template                                                                                                                                  | `01-getting-started/03-layouts-and-pages.md`                                                    |
-| Redirect `/`                     | PASS                              | `next.config.ts:7` (`redirects()`). Thay cho `redirect()` trong page, vốn làm dev server báo lỗi validate dưới Cache Components                                                       | `03-api-reference/05-config/01-next-config-js/redirects.md`                                     |
-| Server/Client boundary           | PASS                              | 12 file `'use client'`, đều là lá tương tác hoặc error boundary; props truyền qua ranh giới đều serialize được (`icon` là element)                                                    | `01-getting-started/05-server-and-client-components.md`                                         |
-| Chặn server-only khỏi client     | PASS                              | `import 'server-only'` ở `src/lib/env.ts:1`, `src/lib/api/backend.ts:1` và 3 file trong `services/`; grep `.next/static` không thấy `API_TOKEN`                                       | `02-guides/data-security.md` (Preventing client-side execution)                                 |
-| Data fetching / Cache Components | PASS                              | Dữ liệu động nằm trong `<Suspense>` (`tasks/page.tsx:30`, `dashboard/page.tsx:18`); `await connection()` ở `dashboard/page.tsx:27`; build ra `◐` (Partial Prerender) cho cả hai route | `01-getting-started/08-caching.md`                                                              |
-| Loading UI / streaming           | PASS (lựa chọn hợp lệ)            | Dùng Suspense trong page thay cho `loading.tsx`, nên header tĩnh hiển thị ngay                                                                                                        | `03-api-reference/03-file-conventions/loading.md`                                               |
-| Server Actions: validation       | PASS                              | `safeParse` trên input `unknown` ở mọi action (`actions.ts:22,34-35,48-49`)                                                                                                           | `02-guides/data-security.md` (Validating client input)                                          |
-| Server Actions: lỗi dự kiến      | PASS                              | Trả `ActionResult` thay vì throw                                                                                                                                                      | `01-getting-started/10-error-handling.md` (Handling expected errors)                            |
-| Server Actions: authorization    | **FAIL** (P1, có chủ đích)        | `actions.ts:13` chỉ có ghi chú TODO                                                                                                                                                   | `02-guides/server-actions.md` (Security), `02-guides/production-checklist.md` (Security)        |
-| Cache invalidation               | PASS                              | `revalidatePath` cho `/tasks` và `/dashboard` (`actions.ts:17-18`)                                                                                                                    | `02-guides/server-actions.md` (Choosing a cache update)                                         |
-| Error boundaries                 | PASS (sau khi sửa)                | `(app)/error.tsx` dùng prop `retry`; **đã thêm** `app/global-error.tsx`                                                                                                               | `03-api-reference/03-file-conventions/error.md` (Global Error)                                  |
-| Not found                        | PASS                              | `app/not-found.tsx`                                                                                                                                                                   | `03-api-reference/03-file-conventions/not-found.md`                                             |
-| Metadata API                     | PASS                              | `layout.tsx:12` có title template; mỗi page export `metadata`                                                                                                                         | `01-getting-started/14-metadata-and-og-images.md`                                               |
-| Env variables                    | PASS                              | Validate bằng Zod; chỉ `NEXT_PUBLIC_APP_NAME` là public; `.gitignore` chặn `.env*`; `instrumentation.ts` cho process thoát khi cấu hình sai                                           | `02-guides/environment-variables.md`, `03-api-reference/03-file-conventions/instrumentation.md` |
-| Theme không nháy (no-flash)      | PASS                              | `layout.tsx:26` dùng inline script kèm `suppressHydrationWarning`, khớp mẫu chính thức                                                                                                | `02-guides/preventing-flash-before-hydration.md` (Themes)                                       |
-| Font                             | PASS                              | `next/font/google` (Geist)                                                                                                                                                            | `01-getting-started/13-fonts.md`                                                                |
-| Forms                            | PASS WITH ISSUES (P3)             | RHF gọi action trực tiếp, nên form không hoạt động khi chưa có JS (không có progressive enhancement)                                                                                  | `02-guides/forms.md`                                                                            |
-| Security headers / CSP           | NOT IMPLEMENTED (P3, khuyến nghị) | `next.config.ts` không có `headers()`                                                                                                                                                 | `02-guides/content-security-policy.md`                                                          |
+| Item                              | Result                            | Evidence                                                                                                                                                                                         | Reference                                                                                       |
+| --------------------------------- | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------- |
+| App Router, route groups          | PASS                              | `src/app/(app)/layout.tsx:12`; the `(app)` group is used only to split layouts and does not affect the URL                                                                                       | `03-api-reference/03-file-conventions/route-groups.md`                                          |
+| `page.tsx` / `layout.tsx`         | PASS                              | Pages only compose UI and read data; the layout mounts the template                                                                                                                              | `01-getting-started/03-layouts-and-pages.md`                                                    |
+| Redirect `/`                      | PASS                              | `next.config.ts:7` (`redirects()`). Replaces `redirect()` in a page, which made the dev server report a validation error under Cache Components                                                  | `03-api-reference/05-config/01-next-config-js/redirects.md`                                     |
+| Server/Client boundary            | PASS                              | 12 `'use client'` files, all interactive leaves or error boundaries; props passed across the boundary are all serializable (`icon` is an element)                                                | `01-getting-started/05-server-and-client-components.md`                                         |
+| Keeping server-only out of client | PASS                              | `import 'server-only'` in `src/lib/env.ts:1`, `src/lib/api/backend.ts:1` and 3 files in `services/`; grepping `.next/static` finds no `API_TOKEN`                                                | `02-guides/data-security.md` (Preventing client-side execution)                                 |
+| Data fetching / Cache Components  | PASS                              | Dynamic data sits inside `<Suspense>` (`tasks/page.tsx:30`, `dashboard/page.tsx:18`); `await connection()` in `dashboard/page.tsx:27`; the build outputs `◐` (Partial Prerender) for both routes | `01-getting-started/08-caching.md`                                                              |
+| Loading UI / streaming            | PASS (valid choice)               | Uses Suspense in the page instead of `loading.tsx`, so the static header shows immediately                                                                                                       | `03-api-reference/03-file-conventions/loading.md`                                               |
+| Server Actions: validation        | PASS                              | `safeParse` on `unknown` input in every action (`actions.ts:22,34-35,48-49`)                                                                                                                     | `02-guides/data-security.md` (Validating client input)                                          |
+| Server Actions: expected errors   | PASS                              | Returns `ActionResult` instead of throwing                                                                                                                                                       | `01-getting-started/10-error-handling.md` (Handling expected errors)                            |
+| Server Actions: authorization     | **FAIL** (P1, intentional)        | `actions.ts:13` has only a TODO comment                                                                                                                                                          | `02-guides/server-actions.md` (Security), `02-guides/production-checklist.md` (Security)        |
+| Cache invalidation                | PASS                              | `revalidatePath` for `/tasks` and `/dashboard` (`actions.ts:17-18`)                                                                                                                              | `02-guides/server-actions.md` (Choosing a cache update)                                         |
+| Error boundaries                  | PASS (after fix)                  | `(app)/error.tsx` uses the `retry` prop; **added** `app/global-error.tsx`                                                                                                                        | `03-api-reference/03-file-conventions/error.md` (Global Error)                                  |
+| Not found                         | PASS                              | `app/not-found.tsx`                                                                                                                                                                              | `03-api-reference/03-file-conventions/not-found.md`                                             |
+| Metadata API                      | PASS                              | `layout.tsx:12` has a title template; each page exports `metadata`                                                                                                                               | `01-getting-started/14-metadata-and-og-images.md`                                               |
+| Env variables                     | PASS                              | Validated with Zod; only `NEXT_PUBLIC_APP_NAME` is public; `.gitignore` blocks `.env*`; `instrumentation.ts` makes the process exit on invalid configuration                                     | `02-guides/environment-variables.md`, `03-api-reference/03-file-conventions/instrumentation.md` |
+| Theme without flash (no-flash)    | PASS                              | `layout.tsx:26` uses an inline script with `suppressHydrationWarning`, matching the official pattern                                                                                             | `02-guides/preventing-flash-before-hydration.md` (Themes)                                       |
+| Font                              | PASS                              | `next/font/google` (Geist)                                                                                                                                                                       | `01-getting-started/13-fonts.md`                                                                |
+| Forms                             | PASS WITH ISSUES (P3)             | RHF calls the action directly, so the form does not work before JS is available (no progressive enhancement)                                                                                     | `02-guides/forms.md`                                                                            |
+| Security headers / CSP            | NOT IMPLEMENTED (P3, recommended) | `next.config.ts` has no `headers()`                                                                                                                                                              | `02-guides/content-security-policy.md`                                                          |
 
 ## 4. Atomic Design Compliance Review
 
-Atomic Design được áp dụng như **mô hình tư duy**, không phải 5 tầng kỹ thuật bắt buộc. Bằng chứng: `TaskTable` dùng thẳng `DataTable`; `EmptyState` dùng thẳng trong page.
+Atomic Design is applied as a **mental model**, not as 5 mandatory technical layers. Evidence: `TaskTable` uses `DataTable` directly; `EmptyState` is used directly in the page.
 
-- **Atoms: PASS.** `Button`, `Input`, `Textarea`, `Select`, `Checkbox`, `Label`, `Badge`, `Spinner`, `Skeleton`, `Separator`, `Card`. Không atom nào chứa logic domain.
-  - Variant dùng CVA một cách nhất quán. Accessibility: `aria-busy` cho loading; `aria-invalid` được tạo style; icon có `aria-hidden`.
-  - `Card` (component có nhiều phần con) được xếp là atom vì nó chỉ là một khung bề mặt. Có thể tranh luận, nhưng chấp nhận được.
-- **Molecules: PASS.** `FormField` ghép Label + control + hint/error và nối `aria-describedby`; đây là molecule mẫu mực theo đúng định nghĩa "làm một việc".
-  - `ConfirmationDialog` được dựng từ `Dialog` + `Alert` + `Button`: composition đúng nghĩa.
-  - Không có molecule nào chỉ là wrapper rỗng.
+- **Atoms: PASS.** `Button`, `Input`, `Textarea`, `Select`, `Checkbox`, `Label`, `Badge`, `Spinner`, `Skeleton`, `Separator`, `Card`. No atom contains domain logic.
+  - Variants use CVA consistently. Accessibility: `aria-busy` for loading; `aria-invalid` is styled; icons have `aria-hidden`.
+  - `Card` (a component with several sub-parts) is classified as an atom because it is only a surface frame. Debatable, but acceptable.
+- **Molecules: PASS.** `FormField` combines Label + control + hint/error and wires up `aria-describedby`; it is an exemplary molecule under the "does one thing" definition.
+  - `ConfirmationDialog` is built from `Dialog` + `Alert` + `Button`: composition in the proper sense.
+  - No molecule is just an empty wrapper.
 - **Organisms: PASS.**
-  - `DataTable`: generic; ô do feature quyết định.
-  - `AppSidebar`, `MobileNav`: hợp lệ.
-  - `AppHeader` khá mỏng: một container sticky với 2 slot. Chấp nhận được.
-  - Không có organism mang nghiệp vụ nằm trong shared.
-- **Templates: PASS (lựa chọn hợp lệ).**
-  - `DashboardTemplate` chỉ có slot (`dashboard-template.tsx`, 33 dòng). `(app)/layout.tsx` (29 dòng) lắp organisms và config vào đó.
-  - Hai file **không trùng trách nhiệm**: template là cấu trúc UI và xem được trong Storybook; layout là cơ chế routing của Next.js.
-  - Đánh đổi: template chỉ có 1 consumer. Gộp vào layout cũng là một lựa chọn hợp lệ, nhưng sẽ mất khả năng xem shell độc lập trong Storybook.
+  - `DataTable`: generic; the feature decides the cells.
+  - `AppSidebar`, `MobileNav`: valid.
+  - `AppHeader` is rather thin: a sticky container with 2 slots. Acceptable.
+  - No business-specific organism lives in shared.
+- **Templates: PASS (valid choice).**
+  - `DashboardTemplate` has only slots (`dashboard-template.tsx`, 33 lines). `(app)/layout.tsx` (29 lines) mounts organisms and config into it.
+  - The two files **do not overlap in responsibility**: the template is UI structure and viewable in Storybook; the layout is the Next.js routing mechanism.
+  - Trade-off: the template has only 1 consumer. Merging it into the layout is also a valid choice, but would lose the ability to view the shell on its own in Storybook.
 - **Pages: PASS WITH ISSUES (P3).**
-  - `app/**/page.tsx` đóng vai trò Atomic Page: template + dữ liệu thật. Sự phân biệt được giải thích rõ ở `docs/architecture.md`.
-  - Thiếu: Brad Frost nhấn mạnh Pages là nơi **kiểm tra biến thể nội dung**: rỗng, nhiều, tiêu đề dài. Repo chỉ kiểm tra các biến thể này qua E2E, chưa có story cấp "Page" với dữ liệu đại diện (khuyến nghị R5).
-- **Ownership: PASS.** Mọi component chứa domain (`TaskTable`, `TaskForm`, `TaskStatusBadge`...) nằm trong `features/tasks/components/`.
+  - `app/**/page.tsx` plays the role of the Atomic Page: template + real data. The distinction is explained clearly in `docs/architecture.md`.
+  - Missing: Brad Frost stresses that Pages are where **content variations are tested**: empty, many, long titles. The repo only tests these variations through E2E; there is no "Page"-level story with representative data yet (recommendation R5).
+- **Ownership: PASS.** Every component containing domain logic (`TaskTable`, `TaskForm`, `TaskStatusBadge`...) lives in `features/tasks/components/`.
 
 ## 5. Hybrid Architecture Review
 
-Đồ thị phụ thuộc **thực tế** được đo bằng script phân tích import trên 62 module (bỏ qua test/story), sau khi áp dụng các bản sửa. Không phát hiện chu trình:
+The **actual** dependency graph was measured with an import-analysis script over 62 modules (excluding tests/stories), after the fixes were applied. No cycles were found:
 
 ```mermaid
 flowchart TD
@@ -140,94 +140,94 @@ flowchart TD
     end
 ```
 
-Đồ thị khớp với kiến trúc đã thiết kế, nên **không cần đề xuất kiến trúc thay thế**.
+The graph matches the designed architecture, so **no alternative architecture needs to be proposed**.
 
-- **Feature boundaries:** chỉ có 1 feature, nên chưa có phụ thuộc chéo giữa các feature. Quy tắc "không import nội bộ feature khác" đã được ghi trong tài liệu, nhưng ESLint chưa kiểm tra (khuyến nghị R7).
-- **API và state:** UI không gọi `fetch`. Đọc dữ liệu qua `taskRepository` trong Server Component; ghi qua Server Action. State của filter nằm trên URL; không có server state bị nhân đôi ở client.
-- **Abstraction:** `TaskRepository` có 2 implementation thật (demo, REST), nên có lý do tồn tại. Factory `createDemoTaskRepository` phục vụ cách ly giữa các test.
+- **Feature boundaries:** there is only 1 feature, so there are no cross-feature dependencies yet. The rule "do not import another feature's internals" is written in the documentation, but ESLint does not check it yet (recommendation R7).
+- **API and state:** the UI does not call `fetch`. Data is read through `taskRepository` in Server Components; writes go through Server Actions. Filter state lives in the URL; no server state is duplicated on the client.
+- **Abstraction:** `TaskRepository` has 2 real implementations (demo, REST), so it has a reason to exist. The `createDemoTaskRepository` factory serves isolation between tests.
 
 ## 6. Component Classification Matrix
 
-| Component                                                                                                                                       | Vị trí                    | Đề xuất    | Đánh giá                                                                                     |
-| ----------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------- | ---------- | -------------------------------------------------------------------------------------------- |
-| Button, Input, Textarea, Select, Label, Badge, Spinner, Skeleton                                                                                | atoms                     | atoms      | Đúng                                                                                         |
-| Checkbox, Separator                                                                                                                             | atoms                     | atoms      | Đúng; app chưa dùng nhưng có trong yêu cầu ban đầu. `Separator` chưa có story/test (P3)      |
-| Card (+ Header/Title/Description/Content/Footer)                                                                                                | atoms                     | atoms      | Mơ hồ nhưng chấp nhận được. `CardFooter` chưa được dùng ở đâu (ponytail-audit: ứng viên xóa) |
-| FormField, SearchInput, Pagination, EmptyState, Alert, StatCard, PageHeader, NavMenu, ThemeToggle                                               | molecules                 | molecules  | Đúng                                                                                         |
-| Dialog                                                                                                                                          | molecules                 | molecules  | Mơ hồ nhưng chấp nhận được: là primitive hành vi, ghép title + close button                  |
-| ConfirmationDialog                                                                                                                              | molecules                 | molecules  | Đúng (composition từ Dialog)                                                                 |
-| AppSidebar, MobileNav, DataTable                                                                                                                | organisms                 | organisms  | Đúng                                                                                         |
-| AppHeader                                                                                                                                       | organisms                 | organisms  | Đúng, nhưng mỏng                                                                             |
-| DashboardTemplate                                                                                                                               | templates                 | templates  | Đúng; không trùng với layout                                                                 |
-| TaskTable, TaskForm, TaskFormDialog, TaskFilters, TaskStatusSelect, DeleteTaskButton, TaskStats, RecentTasks, TaskStatusBadge/TaskPriorityBadge | features/tasks/components | giữ nguyên | Đúng (có domain)                                                                             |
+| Component                                                                                                                                       | Location                  | Proposed   | Assessment                                                                                                     |
+| ----------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------- | ---------- | -------------------------------------------------------------------------------------------------------------- |
+| Button, Input, Textarea, Select, Label, Badge, Spinner, Skeleton                                                                                | atoms                     | atoms      | Correct                                                                                                        |
+| Checkbox, Separator                                                                                                                             | atoms                     | atoms      | Correct; not used by the app yet but part of the original requirements. `Separator` has no story/test yet (P3) |
+| Card (+ Header/Title/Description/Content/Footer)                                                                                                | atoms                     | atoms      | Ambiguous but acceptable. `CardFooter` is not used anywhere (ponytail-audit: deletion candidate)               |
+| FormField, SearchInput, Pagination, EmptyState, Alert, StatCard, PageHeader, NavMenu, ThemeToggle                                               | molecules                 | molecules  | Correct                                                                                                        |
+| Dialog                                                                                                                                          | molecules                 | molecules  | Ambiguous but acceptable: a behavioral primitive that combines title + close button                            |
+| ConfirmationDialog                                                                                                                              | molecules                 | molecules  | Correct (composition from Dialog)                                                                              |
+| AppSidebar, MobileNav, DataTable                                                                                                                | organisms                 | organisms  | Correct                                                                                                        |
+| AppHeader                                                                                                                                       | organisms                 | organisms  | Correct, but thin                                                                                              |
+| DashboardTemplate                                                                                                                               | templates                 | templates  | Correct; does not duplicate the layout                                                                         |
+| TaskTable, TaskForm, TaskFormDialog, TaskFilters, TaskStatusSelect, DeleteTaskButton, TaskStats, RecentTasks, TaskStatusBadge/TaskPriorityBadge | features/tasks/components | keep as is | Correct (has domain logic)                                                                                     |
 
-Bất nhất API (P3): `className` của `Select` và `SearchInput` áp vào **wrapper**, còn `Input` áp vào **control**. Đây là bất nhất về API, không phải vi phạm kiến trúc.
+API inconsistency (P3): `className` on `Select` and `SearchInput` applies to the **wrapper**, while on `Input` it applies to the **control**. This is an API inconsistency, not an architecture violation.
 
-Kết quả `ponytail-audit` (over-engineering):
+`ponytail-audit` results (over-engineering):
 
-- `delete:` `CardFooter`, không được dùng và không nằm trong yêu cầu ban đầu (`src/components/atoms/card.tsx`).
-- Không có dependency thừa: mọi package trong `dependencies` đều được dùng.
-- **net: −6 dòng, −0 deps.**
+- `delete:` `CardFooter`, unused and not part of the original requirements (`src/components/atoms/card.tsx`).
+- No unnecessary dependencies: every package in `dependencies` is used.
+- **net: −6 lines, −0 deps.**
 
 ## 7. Code Quality, Security and Performance
 
-| ID     | Mức | Phát hiện                                                                                                                                                 | Nguồn                                                                                          |
-| ------ | --- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| SEC-1  | P1  | Không có authentication/authorization ở Server Actions và pages; ở REST mode, visitor ẩn danh dùng quyền của `API_TOKEN`                                  | security-auditor; `actions.ts:13`, `backend.ts:23`                                             |
-| SEC-2  | P2  | Task id `.` hoặc `..` qua được validate; `new URL` chuẩn hóa thành `/v1/tasks/` hoặc `/v1/`, nên `DELETE` có token được gửi tới endpoint ngoài ý muốn     | security-auditor (đã chạy node chứng minh); `schemas.ts` (cũ), `rest-task-repository.ts:34,41` |
-| SEC-3  | P3  | Message lỗi 4xx của backend (kể cả 401/403) được hiển thị nguyên văn cho người dùng                                                                       | `action-result.ts` (cũ)                                                                        |
-| SEC-4  | P3  | Chưa có CSP và security headers. Inline theme script sẽ cần nonce/hash khi thêm CSP                                                                       | `next.config.ts`                                                                               |
-| SEC-5  | P3  | Demo store không giới hạn kích thước và dùng chung cho mọi visitor; kết hợp với SEC-1, ai cũng có thể làm tăng bộ nhớ server                              | `demo-task-repository.ts`                                                                      |
-| SEC-6  | P3  | `pnpm audit`: 1 lỗi high trong **dev dependency** `braces` (`eslint-config-next > … > micromatch`), chưa có bản vá. `pnpm audit --prod`: không có lỗ hổng | lệnh đã chạy                                                                                   |
-| A11Y-1 | P2  | Color contrast < 4.5:1: badge success (light), badge primary/destructive (dark), nút primary (dark)                                                       | axe-core                                                                                       |
-| A11Y-2 | P3  | Heading nhảy cấp h1 → h3 (`CardTitle`, `EmptyState`); trang 404 không có h1                                                                               | axe-core                                                                                       |
-| A11Y-3 | P3  | Span "Previous" bị disabled có `aria-disabled` nhưng không có role, và không có tên trên mobile                                                           | code-reviewer                                                                                  |
-| BUG-1  | P2  | `?page=99`, hoặc xóa item cuối của trang cuối, hiển thị "No tasks yet" sai sự thật và có thể mất luôn pagination                                          | code-reviewer                                                                                  |
-| BUG-2  | P2  | Input của `TaskFilters` không đồng bộ lại khi URL đổi từ nơi khác (click link "Tasks")                                                                    | code-reviewer; E2E đã tái hiện                                                                 |
-| BUG-3  | P3  | Lời gọi Server Action bị reject (mất mạng, deploy skew) không được bắt: form im lặng; select/delete làm cả trang rơi vào error boundary                   | code-reviewer                                                                                  |
-| NX-1   | P3  | Thiếu `app/global-error.tsx`, được production checklist khuyến nghị                                                                                       | `02-guides/production-checklist.md`                                                            |
-| NX-2   | P3  | Form không progressive enhancement (cần JS)                                                                                                               | `02-guides/forms.md`                                                                           |
-| Q-1    | P3  | `formatDate` hiển thị ngày theo UTC: `updatedAt` có thể lệch 1 ngày với người dùng ở UTC+7                                                                | `src/lib/utils.ts`                                                                             |
+| ID     | Level | Finding                                                                                                                                                          | Source                                                                                   |
+| ------ | ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| SEC-1  | P1    | No authentication/authorization in Server Actions and pages; in REST mode, anonymous visitors act with the permissions of `API_TOKEN`                            | security-auditor; `actions.ts:13`, `backend.ts:23`                                       |
+| SEC-2  | P2    | Task id `.` or `..` passes validation; `new URL` normalizes it to `/v1/tasks/` or `/v1/`, so a `DELETE` carrying the token is sent to an unintended endpoint     | security-auditor (ran a node proof); `schemas.ts` (old), `rest-task-repository.ts:34,41` |
+| SEC-3  | P3    | Backend 4xx error messages (including 401/403) are shown verbatim to the user                                                                                    | `action-result.ts` (old)                                                                 |
+| SEC-4  | P3    | No CSP or security headers yet. The inline theme script will need a nonce/hash once CSP is added                                                                 | `next.config.ts`                                                                         |
+| SEC-5  | P3    | The demo store has no size limit and is shared by all visitors; combined with SEC-1, anyone can grow server memory                                               | `demo-task-repository.ts`                                                                |
+| SEC-6  | P3    | `pnpm audit`: 1 high in the **dev dependency** `braces` (`eslint-config-next > … > micromatch`), no patch available yet. `pnpm audit --prod`: no vulnerabilities | command run                                                                              |
+| A11Y-1 | P2    | Color contrast < 4.5:1: success badge (light), primary/destructive badges (dark), primary button (dark)                                                          | axe-core                                                                                 |
+| A11Y-2 | P3    | Heading levels skip h1 → h3 (`CardTitle`, `EmptyState`); the 404 page has no h1                                                                                  | axe-core                                                                                 |
+| A11Y-3 | P3    | The disabled "Previous" span has `aria-disabled` but no role, and no name on mobile                                                                              | code-reviewer                                                                            |
+| BUG-1  | P2    | `?page=99`, or deleting the last item of the last page, wrongly shows "No tasks yet" and can lose the pagination entirely                                        | code-reviewer                                                                            |
+| BUG-2  | P2    | The `TaskFilters` inputs do not resync when the URL changes from elsewhere (clicking the "Tasks" link)                                                           | code-reviewer; reproduced in E2E                                                         |
+| BUG-3  | P3    | A rejected Server Action call (network loss, deploy skew) is not caught: the form fails silently; select/delete drops the whole page into the error boundary     | code-reviewer                                                                            |
+| NX-1   | P3    | Missing `app/global-error.tsx`, which the production checklist recommends                                                                                        | `02-guides/production-checklist.md`                                                      |
+| NX-2   | P3    | Forms have no progressive enhancement (require JS)                                                                                                               | `02-guides/forms.md`                                                                     |
+| Q-1    | P3    | `formatDate` shows dates in UTC: `updatedAt` can be off by 1 day for users in UTC+7                                                                              | `src/lib/utils.ts`                                                                       |
 
-Đã kiểm tra và **không có vấn đề**:
+Checked and found **no issues**:
 
-- Không có XSS sink: `themeInitScript` là hằng số.
-- `buildUrl` không thể đổi host.
-- Zod loại bỏ field thừa, nên không có mass assignment.
-- `NEXT_PUBLIC_*` không chứa secret.
-- Không có hydration risk (format ngày cố định locale và UTC).
-- Dialog: focus trap thực tế giữ được 20/20 lần Tab.
-- **Performance:** không phát hiện vấn đề cụ thể có bằng chứng. Icon import theo tên (tree-shaken), font dùng `next/font`, ranh giới client nhỏ. Next 16 không còn in kích thước bundle; nên đo bằng `next experimental-analyze` nếu cần.
+- No XSS sink: `themeInitScript` is a constant.
+- `buildUrl` cannot change the host.
+- Zod strips extra fields, so there is no mass assignment.
+- `NEXT_PUBLIC_*` contains no secrets.
+- No hydration risk (date formatting uses a fixed locale and UTC).
+- Dialog: the focus trap actually held 20/20 Tab presses.
+- **Performance:** no specific, evidenced issue found. Icons are imported by name (tree-shaken), fonts use `next/font`, client boundaries are small. Next 16 no longer prints bundle sizes; measure with `next experimental-analyze` if needed.
 
 ## 8. Testing Results
 
-Tất cả các lệnh dưới đây **đã chạy thật** trong phiên audit, sau khi áp dụng các bản sửa:
+All the commands below **were actually run** during the audit session, after the fixes were applied:
 
-| Lệnh                                                                        | Kết quả                                                                                                 |
-| --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| `pnpm typecheck`                                                            | Pass                                                                                                    |
-| `pnpm lint`                                                                 | Pass (0 lỗi)                                                                                            |
-| `pnpm format:check`                                                         | Pass                                                                                                    |
-| `pnpm test`                                                                 | **61/61 pass**, 12 file. Trước audit: 45 test                                                           |
-| `pnpm test:coverage`                                                        | 65.2% statements (trước: 56.5%); chưa đặt ngưỡng                                                        |
-| `pnpm build`                                                                | Pass; `/dashboard`, `/tasks` là `◐` Partial Prerender                                                   |
-| `CI=1 pnpm test:e2e` (production server)                                    | **7/7 pass** (trước: 5)                                                                                 |
-| `pnpm build-storybook`                                                      | Pass                                                                                                    |
-| `pnpm audit --prod` / `pnpm audit`                                          | 0 lỗ hổng / 1 lỗi high ở dev dependency (SEC-6)                                                         |
-| axe-core (WCAG 2 A/AA, 2.1 AA, best-practice), light và dark, gồm cả dialog | Sau khi sửa: 0 vi phạm, trừ span "Previous" bị disabled (được miễn theo WCAG 1.4.3: inactive component) |
-| Kiểm tra mutation: tắt bản sửa BUG-2 rồi chạy lại test                      | Test resync **fail** như mong đợi, rồi pass lại khi bật bản sửa                                         |
+| Command                                                                             | Result                                                                                                       |
+| ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `pnpm typecheck`                                                                    | Pass                                                                                                         |
+| `pnpm lint`                                                                         | Pass (0 errors)                                                                                              |
+| `pnpm format:check`                                                                 | Pass                                                                                                         |
+| `pnpm test`                                                                         | **61/61 pass**, 12 files. Before the audit: 45 tests                                                         |
+| `pnpm test:coverage`                                                                | 65.2% statements (before: 56.5%); no threshold set yet                                                       |
+| `pnpm build`                                                                        | Pass; `/dashboard`, `/tasks` are `◐` Partial Prerender                                                       |
+| `CI=1 pnpm test:e2e` (production server)                                            | **7/7 pass** (before: 5)                                                                                     |
+| `pnpm build-storybook`                                                              | Pass                                                                                                         |
+| `pnpm audit --prod` / `pnpm audit`                                                  | 0 vulnerabilities / 1 high in a dev dependency (SEC-6)                                                       |
+| axe-core (WCAG 2 A/AA, 2.1 AA, best-practice), light and dark, including the dialog | After fixes: 0 violations, except the disabled "Previous" span (exempt under WCAG 1.4.3: inactive component) |
+| Mutation check: disable the BUG-2 fix and rerun the tests                           | The resync test **fails** as expected, then passes again once the fix is re-enabled                          |
 
-**Chưa kiểm chứng (NOT VERIFIED)**
+**Not verified (NOT VERIFIED)**
 
-- Workflow GitHub Actions chưa chạy trên GitHub.
-- Husky pre-commit chưa được kích hoạt, vì không có commit nào được tạo.
-- REST mode: phần đọc đã chạy với mock backend trong phiên trước; phần ghi chỉ có unit test.
+- The GitHub Actions workflow has not run on GitHub.
+- The Husky pre-commit hook has not been triggered, because no commit was made.
+- REST mode: reads were run against a mock backend in an earlier session; writes have only unit tests.
 
-Đánh giá chất lượng test: test query theo role và label, kiểm tra hành vi chứ không kiểm tra chi tiết triển khai. Server Action được test với repository đã mock. Còn thiếu: test cho backdrop click của Dialog, và story cấp Page.
+Test quality assessment: tests query by role and label, and check behavior rather than implementation details. Server Actions are tested with a mocked repository. Still missing: a test for the Dialog backdrop click, and Page-level stories.
 
 ## 9. Prioritized Findings
 
-### P0: không có
+### P0: none
 
 ### P1
 
@@ -235,160 +235,160 @@ Tất cả các lệnh dưới đây **đã chạy thật** trong phiên audit, 
 ID: SEC-1
 Severity: P1
 Category: Security / Authorization
-Title: Server Actions và pages không có auth; REST mode dùng chung service token cho mọi visitor
+Title: Server Actions and pages have no auth; REST mode shares one service token across all visitors
 Location: src/features/tasks/actions.ts:13,21,33,47,61; src/lib/api/backend.ts:23
-Observed behavior: Bất kỳ ai cũng có thể gọi 4 action (endpoint POST public).
-  Ở API_MODE=rest, request mang theo Authorization: Bearer API_TOKEN.
-Evidence: actions.ts chỉ có ghi chú "Auth integration point"; không có proxy.ts.
+Observed behavior: Anyone can call the 4 actions (public POST endpoints).
+  In API_MODE=rest, requests carry Authorization: Bearer API_TOKEN.
+Evidence: actions.ts only has an "Auth integration point" comment; there is no proxy.ts.
 Reference: 02-guides/server-actions.md (Security); 02-guides/data-security.md (Authentication and authorization);
   https://nextjs.org/docs/app/guides/data-security
-Why it matters: Người ngoài có thể tạo, sửa, xóa dữ liệu với quyền của service account.
-Recommended solution (cần quyết định, chưa áp dụng):
-  1. Tạo src/lib/auth.ts với getSession() và requireUser(), theo cơ chế của backend
-     (OIDC, session cookie hoặc JWT).
-  2. Gọi requireUser() đầu mỗi Server Action, và trong repository nếu cần kiểm tra quyền sở hữu.
-  3. Chuyển từ service token sang token của user (cookie httpOnly) trong backend.ts.
-  4. Thêm src/proxy.ts để redirect người chưa đăng nhập (lớp phòng thủ bổ sung).
-  5. Tùy chọn fail-closed: ở API_MODE=rest, từ chối mutation khi chưa cấu hình auth.
-Trade-offs: Cơ chế auth phụ thuộc backend; template cố ý không đoán trước.
-  Phương án fail-closed an toàn hơn, nhưng REST mode sẽ không ghi được cho tới khi có auth.
-Verification: Test action trả Unauthorized khi chưa có session; E2E đăng nhập rồi mới CRUD được.
-Đã làm: thêm cảnh báo trong README (mục Production) và .env.example.
+Why it matters: Outsiders can create, edit and delete data with the service account's permissions.
+Recommended solution (decision needed, not applied):
+  1. Create src/lib/auth.ts with getSession() and requireUser(), following the backend's mechanism
+     (OIDC, session cookie or JWT).
+  2. Call requireUser() at the start of every Server Action, and in the repository if ownership checks are needed.
+  3. Switch from the service token to the user's token (httpOnly cookie) in backend.ts.
+  4. Add src/proxy.ts to redirect signed-out users (an additional layer of defense).
+  5. Fail-closed option: in API_MODE=rest, reject mutations when auth is not configured.
+Trade-offs: The auth mechanism depends on the backend; the template deliberately does not guess it.
+  The fail-closed option is safer, but REST mode will not be able to write until auth exists.
+Verification: Action test returns Unauthorized without a session; E2E can only CRUD after signing in.
+Done: added a warning to the README (Production section) and .env.example.
 ```
 
-### P2 (đã sửa)
+### P2 (fixed)
 
 ```text
-ID: SEC-2 | P2 | Security | Path traversal qua task id
-Location: src/features/tasks/schemas.ts:59 (đã sửa); rest-task-repository.ts:34,41
+ID: SEC-2 | P2 | Security | Path traversal via task id
+Location: src/features/tasks/schemas.ts:59 (fixed); rest-task-repository.ts:34,41
 Evidence: buildUrl('https://api.example.com/v1', '/tasks/..') => https://api.example.com/v1/
 Fix: taskIdSchema = z.string().regex(/^[A-Za-z0-9_-]{1,100}$/)
-Verification: schemas.test.ts (7 trường hợp bị từ chối), actions.test.ts ('..' không gọi tới repository)
+Verification: schemas.test.ts (7 rejected cases), actions.test.ts ('..' does not reach the repository)
 ```
 
 ```text
-ID: A11Y-1 | P2 | Accessibility | Color contrast dưới chuẩn WCAG AA (1.4.3)
-Location: src/app/globals.css (token --success ở light; --primary, --destructive và các
-  foreground tương ứng ở dark)
-Fix: Light --success làm tối hơn (L 0.52 → 0.46). Dark --primary và --destructive làm sáng hơn,
-  đi kèm chữ tối cho phần nền màu (mẫu "lighter accent + dark text").
-Trade-offs: Nút primary ở dark mode dùng chữ tối thay vì chữ trắng (khác biệt thẩm mỹ).
-Verification: axe-core 0 vi phạm color-contrast ở cả hai theme (trừ phần tử disabled được miễn).
+ID: A11Y-1 | P2 | Accessibility | Color contrast below WCAG AA (1.4.3)
+Location: src/app/globals.css (token --success in light; --primary, --destructive and their
+  corresponding foregrounds in dark)
+Fix: Light --success made darker (L 0.52 → 0.46). Dark --primary and --destructive made lighter,
+  paired with dark text on the colored background (the "lighter accent + dark text" pattern).
+Trade-offs: The primary button in dark mode uses dark text instead of white text (an aesthetic difference).
+Verification: axe-core 0 color-contrast violations in both themes (except exempt disabled elements).
 ```
 
 ```text
-ID: BUG-1 | P2 | Correctness | Trang vượt phạm vi hiển thị empty state sai
+ID: BUG-1 | P2 | Correctness | Out-of-range page shows an incorrect empty state
 Location: src/app/(app)/tasks/page.tsx:65-80
-Fix: Khi items rỗng nhưng total > 0, hiển thị EmptyState "This page is empty" kèm link
-  "Go to page N" (trang cuối).
-Trade-offs: Không dùng redirect(), để tránh redirect giữa lúc đang stream và giữa lúc
-  revalidate sau action.
+Fix: When items is empty but total > 0, show an EmptyState "This page is empty" with a link
+  "Go to page N" (the last page).
+Trade-offs: redirect() is not used, to avoid redirecting mid-stream and during
+  revalidation after an action.
 Verification: E2E 'out-of-range page explains itself and links back'.
 ```
 
 ```text
-ID: BUG-2 | P2 | Correctness | Input của TaskFilters lệch với URL
+ID: BUG-2 | P2 | Correctness | TaskFilters inputs out of sync with the URL
 Location: src/features/tasks/components/task-filters.tsx:27-39
-Fix: Mẫu "điều chỉnh state khi prop đổi" của React. Chỉ reset input khi URL đổi KHÔNG phải
-  do chính component điều hướng, nên không xóa chữ người dùng đang gõ.
-Trade-offs: Không dùng `key` để remount, vì remount làm mất focus khi đang gõ.
-Verification: task-filters.test.tsx (4 test, đã kiểm tra mutation); E2E 'filter inputs reset…'.
+Fix: React's "adjusting state when a prop changes" pattern. Inputs are reset only when the URL change
+  was NOT caused by the component's own navigation, so text the user is typing is not wiped.
+Trade-offs: `key` is not used to remount, because remounting loses focus while typing.
+Verification: task-filters.test.tsx (4 tests, mutation-checked); E2E 'filter inputs reset…'.
 ```
 
 ### P3
 
-| ID     | Trạng thái             | Ghi chú                                                                                                                                                                       |
-| ------ | ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| SEC-3  | Đã sửa                 | `src/lib/action-result.ts`: chỉ cho phép message của `VALIDATION_ERROR`, `NOT_FOUND`, `TIMEOUT`, `NETWORK_ERROR` hiển thị cho người dùng; ẩn 401/403. Test: `actions.test.ts` |
-| SEC-4  | Chưa sửa (khuyến nghị) | Thêm CSP có nonce theo `02-guides/content-security-policy.md`, cùng các header `X-Content-Type-Options` và `Referrer-Policy`                                                  |
-| SEC-5  | Đã sửa                 | `demo-task-repository.ts:16`: `MAX_TASKS = 500`. Test: `demo-task-repository.test.ts`                                                                                         |
-| SEC-6  | Theo dõi upstream      | Chỉ ở dev dependency; chưa có bản vá                                                                                                                                          |
-| A11Y-2 | Đã sửa                 | `CardTitle` render `h2`; `EmptyState` có prop `titleAs` (mặc định h2); trang 404 dùng h1                                                                                      |
-| A11Y-3 | Đã sửa                 | `pagination.tsx`: span disabled có `aria-hidden` (không thao tác được, không cần thông báo)                                                                                   |
-| BUG-3  | Đã sửa                 | Thêm `callAction()` trong `action-result.ts`, dùng ở 3 component client. Test: `task-form.test.tsx`                                                                           |
-| NX-1   | Đã sửa                 | Thêm `src/app/global-error.tsx`, có `<html>/<body>` và CSS riêng theo tài liệu                                                                                                |
-| NX-2   | Chưa sửa (đánh đổi)    | Muốn progressive enhancement phải chuyển sang `<form action>` + `useActionState` và bỏ bớt RHF                                                                                |
-| Q-1    | Chưa sửa (khuyến nghị) | Dùng mẫu `LocalDate` + inline script trong `02-guides/preventing-flash-before-hydration.md` (Dates)                                                                           |
-| Q-2    | Chưa sửa               | Bất nhất `className` ở Select/SearchInput (mục 6)                                                                                                                             |
-| Q-3    | Chưa sửa               | `CardFooter` không dùng; `Separator` chưa có story/test                                                                                                                       |
-| Q-4    | Chưa sửa               | Chưa có ngưỡng coverage trong `vitest.config.mts`                                                                                                                             |
-| Q-5    | Chưa sửa (khuyến nghị) | `revalidatePath('/dashboard')` hoạt động đúng. Vì dữ liệu chưa cache, `refresh()` sát nghĩa hơn; khi thêm `'use cache'` thì nên chuyển sang `cacheTag` + `updateTag`          |
+| ID     | Status                  | Notes                                                                                                                                                                          |
+| ------ | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| SEC-3  | Fixed                   | `src/lib/action-result.ts`: only messages for `VALIDATION_ERROR`, `NOT_FOUND`, `TIMEOUT`, `NETWORK_ERROR` are shown to the user; 401/403 are hidden. Test: `actions.test.ts`   |
+| SEC-4  | Not fixed (recommended) | Add a nonce-based CSP per `02-guides/content-security-policy.md`, along with the `X-Content-Type-Options` and `Referrer-Policy` headers                                        |
+| SEC-5  | Fixed                   | `demo-task-repository.ts:16`: `MAX_TASKS = 500`. Test: `demo-task-repository.test.ts`                                                                                          |
+| SEC-6  | Tracking upstream       | Dev dependency only; no patch available yet                                                                                                                                    |
+| A11Y-2 | Fixed                   | `CardTitle` renders `h2`; `EmptyState` has a `titleAs` prop (default h2); the 404 page uses h1                                                                                 |
+| A11Y-3 | Fixed                   | `pagination.tsx`: the disabled span has `aria-hidden` (not operable, no need to announce it)                                                                                   |
+| BUG-3  | Fixed                   | Added `callAction()` in `action-result.ts`, used in 3 client components. Test: `task-form.test.tsx`                                                                            |
+| NX-1   | Fixed                   | Added `src/app/global-error.tsx`, with its own `<html>/<body>` and CSS per the documentation                                                                                   |
+| NX-2   | Not fixed (trade-off)   | Progressive enhancement would require switching to `<form action>` + `useActionState` and dropping part of RHF                                                                 |
+| Q-1    | Not fixed (recommended) | Use the `LocalDate` + inline script pattern from `02-guides/preventing-flash-before-hydration.md` (Dates)                                                                      |
+| Q-2    | Not fixed               | `className` inconsistency in Select/SearchInput (section 6)                                                                                                                    |
+| Q-3    | Not fixed               | `CardFooter` unused; `Separator` has no story/test yet                                                                                                                         |
+| Q-4    | Not fixed               | No coverage threshold in `vitest.config.mts` yet                                                                                                                               |
+| Q-5    | Not fixed (recommended) | `revalidatePath('/dashboard')` works correctly. Since the data is not cached yet, `refresh()` is a closer fit; once `'use cache'` is added, switch to `cacheTag` + `updateTag` |
 
 ## 10. Refactoring Roadmap
 
-**1. Must fix (trước khi deploy công khai ở REST mode)**
+**1. Must fix (before public deployment in REST mode)**
 
-- SEC-1: triển khai auth theo các bước trong mục 9. File liên quan: `src/lib/auth.ts` (mới), `src/features/tasks/actions.ts`, `src/lib/api/backend.ts`, `src/proxy.ts` (mới), `src/app/(auth)/login/page.tsx` (mới).
-- Đẩy repo lên GitHub và xác nhận CI xanh.
+- SEC-1: implement auth following the steps in section 9. Related files: `src/lib/auth.ts` (new), `src/features/tasks/actions.ts`, `src/lib/api/backend.ts`, `src/proxy.ts` (new), `src/app/(auth)/login/page.tsx` (new).
+- Push the repo to GitHub and confirm CI is green.
 
 **2. Should fix**
 
-- SEC-4: CSP và security headers trong `next.config.ts`. Inline theme script cần nonce/hash.
-- Q-4: đặt ngưỡng coverage (ví dụ 70% cho `src/lib` và `src/components`).
-- R5: thêm story cấp "Page" với biến thể nội dung (danh sách rỗng, 1 task, 100 task, tiêu đề rất dài) để làm đúng vai trò Pages theo Brad Frost.
-- R7: thêm rule ESLint chặn `features/A` import `features/B/**` (hiện mới chỉ ghi trong tài liệu).
+- SEC-4: CSP and security headers in `next.config.ts`. The inline theme script needs a nonce/hash.
+- Q-4: set a coverage threshold (for example 70% for `src/lib` and `src/components`).
+- R5: add "Page"-level stories with content variations (empty list, 1 task, 100 tasks, very long title) to properly fulfil the role of Pages per Brad Frost.
+- R7: add an ESLint rule blocking `features/A` from importing `features/B/**` (currently only written in the documentation).
 
 **3. Nice to have**
 
-- Q-1: hiển thị ngày theo múi giờ người dùng.
-- Q-2: thống nhất prop `className` (hoặc thêm `wrapperClassName`).
-- Q-3: xóa `CardFooter` hoặc dùng nó; thêm story cho `Separator`.
-- NX-2: progressive enhancement cho form, nếu cần hỗ trợ trường hợp không có JS.
+- Q-1: show dates in the user's time zone.
+- Q-2: unify the `className` prop (or add `wrapperClassName`).
+- Q-3: delete `CardFooter` or use it; add a story for `Separator`.
+- NX-2: progressive enhancement for forms, if the no-JS case needs to be supported.
 
 ## 11. Changes Applied
 
-| File                                                                                                                                                             | Thay đổi                                              | Finding         |
-| ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- | --------------- |
-| `src/features/tasks/schemas.ts`                                                                                                                                  | Allowlist regex cho `taskIdSchema`                    | SEC-2           |
-| `src/lib/action-result.ts`                                                                                                                                       | Allowlist message cho người dùng; thêm `callAction()` | SEC-3, BUG-3    |
-| `src/features/tasks/services/demo-task-repository.ts`                                                                                                            | `MAX_TASKS = 500`                                     | SEC-5           |
-| `src/app/(app)/tasks/page.tsx`                                                                                                                                   | Empty state cho trang vượt phạm vi                    | BUG-1           |
-| `src/features/tasks/components/task-filters.tsx`                                                                                                                 | Đồng bộ input với URL                                 | BUG-2           |
-| `task-form.tsx`, `task-status-select.tsx`, `delete-task-button.tsx`                                                                                              | Bọc lời gọi action bằng `callAction()`                | BUG-3           |
-| `src/app/globals.css`                                                                                                                                            | Chỉnh token để đạt contrast                           | A11Y-1          |
-| `src/components/atoms/card.tsx`, `molecules/empty-state.tsx`, `app/not-found.tsx`, `features/tasks/components/recent-tasks.tsx`                                  | Sửa thứ bậc heading                                   | A11Y-2          |
-| `src/components/molecules/pagination.tsx`                                                                                                                        | `aria-hidden` cho control disabled                    | A11Y-3          |
-| `src/app/global-error.tsx` (mới)                                                                                                                                 | Global error boundary                                 | NX-1            |
-| `README.md`, `.env.example`                                                                                                                                      | Cảnh báo SEC-1                                        | SEC-1           |
-| `docs/api-integration.md`, `docs/architecture.md`                                                                                                                | Cập nhật hành vi xử lý lỗi                            | SEC-3, BUG-3    |
-| Test mới/mở rộng: `task-filters.test.tsx` (mới), `schemas.test.ts`, `actions.test.ts`, `demo-task-repository.test.ts`, `task-form.test.tsx`, `e2e/tasks.spec.ts` | +16 unit test, +2 E2E                                 | Tất cả mục trên |
+| File                                                                                                                                                               | Change                                              | Finding          |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------- | ---------------- |
+| `src/features/tasks/schemas.ts`                                                                                                                                    | Regex allowlist for `taskIdSchema`                  | SEC-2            |
+| `src/lib/action-result.ts`                                                                                                                                         | User-facing message allowlist; added `callAction()` | SEC-3, BUG-3     |
+| `src/features/tasks/services/demo-task-repository.ts`                                                                                                              | `MAX_TASKS = 500`                                   | SEC-5            |
+| `src/app/(app)/tasks/page.tsx`                                                                                                                                     | Empty state for out-of-range pages                  | BUG-1            |
+| `src/features/tasks/components/task-filters.tsx`                                                                                                                   | Sync inputs with the URL                            | BUG-2            |
+| `task-form.tsx`, `task-status-select.tsx`, `delete-task-button.tsx`                                                                                                | Wrap action calls with `callAction()`               | BUG-3            |
+| `src/app/globals.css`                                                                                                                                              | Adjust tokens to meet contrast                      | A11Y-1           |
+| `src/components/atoms/card.tsx`, `molecules/empty-state.tsx`, `app/not-found.tsx`, `features/tasks/components/recent-tasks.tsx`                                    | Fix heading hierarchy                               | A11Y-2           |
+| `src/components/molecules/pagination.tsx`                                                                                                                          | `aria-hidden` for the disabled control              | A11Y-3           |
+| `src/app/global-error.tsx` (new)                                                                                                                                   | Global error boundary                               | NX-1             |
+| `README.md`, `.env.example`                                                                                                                                        | SEC-1 warning                                       | SEC-1            |
+| `docs/api-integration.md`, `docs/architecture.md`                                                                                                                  | Update error-handling behavior                      | SEC-3, BUG-3     |
+| New/extended tests: `task-filters.test.tsx` (new), `schemas.test.ts`, `actions.test.ts`, `demo-task-repository.test.ts`, `task-form.test.tsx`, `e2e/tasks.spec.ts` | +16 unit tests, +2 E2E                              | All of the above |
 
-Không có thay đổi nào ở cấu trúc thư mục, API công khai của component, dependency hay contract với backend. Thay đổi duy nhất ở API component là `EmptyState` thêm prop tùy chọn `titleAs`, không gây breaking change.
+No changes to the folder structure, public component APIs, dependencies or the backend contract. The only change to a component API is that `EmptyState` gains an optional `titleAs` prop, which is not a breaking change.
 
 ## 12. Final Assessment
 
-| Câu hỏi                                    | Verdict                                                                                                                               |
-| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
-| Next.js có được triển khai đúng không?     | **PASS WITH ISSUES**: đúng với tài liệu của bản 16.4.2; vấn đề còn lại là auth (P1, có chủ đích) và CSP (khuyến nghị)                 |
-| Atomic Design có được áp dụng đúng không?  | **PASS**: phân loại có lý do, không ép đủ 5 cấp, Template và layout được tách bạch; thiếu story cấp Page (P3)                         |
-| Kiến trúc hybrid có dễ bảo trì không?      | **PASS**: không có chu trình, không vi phạm chiều phụ thuộc, có ESLint bảo vệ                                                         |
-| Có phù hợp làm template tái sử dụng không? | **PASS WITH ISSUES**: dùng được ngay cho Admin Dashboard, Internal app và ứng dụng REST. SaaS cần thêm auth và multi-tenant (chưa có) |
-| Còn gì trước khi dùng cho production?      | Auth (SEC-1); CI chạy xanh trên GitHub; CSP và security headers; error reporting (Sentry...)                                          |
+| Question                                 | Verdict                                                                                                                                                |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Is Next.js implemented correctly?        | **PASS WITH ISSUES**: matches the documentation for 16.4.2; remaining issues are auth (P1, intentional) and CSP (recommended)                          |
+| Is Atomic Design applied correctly?      | **PASS**: classification is justified, all 5 levels are not forced, Template and layout are kept separate; Page-level stories are missing (P3)         |
+| Is the hybrid architecture maintainable? | **PASS**: no cycles, no dependency-direction violations, protected by ESLint                                                                           |
+| Is it suitable as a reusable template?   | **PASS WITH ISSUES**: usable right away for Admin Dashboards, internal apps and REST applications. SaaS needs auth and multi-tenancy (not present yet) |
+| What remains before production use?      | Auth (SEC-1); CI running green on GitHub; CSP and security headers; error reporting (Sentry...)                                                        |
 
-Tách bạch giữa đúng/sai kỹ thuật và sở thích kiến trúc:
+Separating technical right/wrong from architectural preference:
 
-- **Đúng/sai về framework:** SEC-1, SEC-2, A11Y-1, BUG-1/2/3.
-- **Sở thích kiến trúc, không phải lỗi:** Template riêng so với gộp vào layout; Suspense trong page so với `loading.tsx`; `Card` hay `Dialog` thuộc cấp nào; không dùng TanStack Query.
+- **Right/wrong with respect to the framework:** SEC-1, SEC-2, A11Y-1, BUG-1/2/3.
+- **Architectural preference, not defects:** a separate Template versus merging into the layout; Suspense in the page versus `loading.tsx`; which level `Card` or `Dialog` belongs to; not using TanStack Query.
 
-## 13. Cập nhật sau audit: Dependency Deep Audit (2026-10-20)
+## 13. Post-audit update: Dependency Deep Audit (2026-10-20)
 
-Đã có một audit chuyên sâu về dependency: [`dependency-deep-audit.md`](dependency-deep-audit.md). Các phát hiện kiến trúc ở trên giữ nguyên. Các kết luận dưới đây được bổ sung hoặc điều chỉnh:
+A deep dependency audit is now available: [`dependency-deep-audit.md`](dependency-deep-audit.md). The architecture findings above remain unchanged. The conclusions below are added or adjusted:
 
-| Mục trong báo cáo này         | Cập nhật                                                                                                                                                                                                                                           |
-| ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| §2 Environment                | `react`/`react-dom` được nâng patch lên **19.3.1**. App Router chạy bằng React đi kèm Next (`19.3.0-canary-278794d7-20261002`), nên version trong `package.json` chỉ ảnh hưởng tới tooling.                                                        |
-| §2 Environment (Node)         | **Phát hiện mới (P2, đã sửa):** `engines.node: >=22` quá rộng. Đã sửa thành `^22.22.2 \|\| ^24.15.0 \|\| >=26.0.0` để khớp với jsdom, Vitest và lint-staged; thêm `.nvmrc`, và CI đọc version từ file này.                                         |
-| §6 "Không có dependency thừa" | **Được xác nhận** bằng Knip và kiểm tra thủ công từng package.                                                                                                                                                                                     |
-| §7 SEC-6                      | **Được xác nhận:** GHSA-vfj7-8cjw-p6xm / CVE-2026-93687, chưa có bản vá. Phân tích sâu hơn cho thấy code dính lỗi chỉ chạy khi có `settings.next.rootDir`, mà repo không đặt setting này. Mức thực tế **Low/Informational**; vẫn chỉ cần theo dõi. |
-| §7 Performance                | Đã có số đo thực tế: first-load JS `/dashboard` 187.3 KiB gzip, `/tasks` 234.1 KiB gzip. Stack form (Zod, RHF, resolver) chỉ tải ở `/tasks`, khoảng 46 KiB gzip.                                                                                   |
-| §10 Roadmap                   | Thêm: theo dõi ESLint 10 (DEP-2); cân nhắc tách Storybook thành tùy chọn (DEP-5, khuyến nghị giữ).                                                                                                                                                 |
+| Section in this report           | Update                                                                                                                                                                                                                                                                           |
+| -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| §2 Environment                   | `react`/`react-dom` were patch-upgraded to **19.3.1**. The App Router runs on the React bundled with Next (`19.3.0-canary-278794d7-20261002`), so the version in `package.json` only affects tooling.                                                                            |
+| §2 Environment (Node)            | **New finding (P2, fixed):** `engines.node: >=22` was too broad. Changed to `^22.22.2 \|\| ^24.15.0 \|\| >=26.0.0` to match jsdom, Vitest and lint-staged; added `.nvmrc`, and CI reads the version from this file.                                                              |
+| §6 "No unnecessary dependencies" | **Confirmed** with Knip and a manual check of each package.                                                                                                                                                                                                                      |
+| §7 SEC-6                         | **Confirmed:** GHSA-vfj7-8cjw-p6xm / CVE-2026-93687, no patch available yet. Deeper analysis shows the vulnerable code only runs when `settings.next.rootDir` is set, and the repo does not set it. Actual severity **Low/Informational**; tracking is still all that is needed. |
+| §7 Performance                   | Real measurements now exist: first-load JS `/dashboard` 187.3 KiB gzip, `/tasks` 234.1 KiB gzip. The form stack (Zod, RHF, resolver) only loads on `/tasks`, about 46 KiB gzip.                                                                                                  |
+| §10 Roadmap                      | Added: track ESLint 10 (DEP-2); consider making Storybook optional (DEP-5, recommendation: keep it).                                                                                                                                                                             |
 
-## 14. Cập nhật sau audit: Production Readiness (2026-10-20)
+## 14. Post-audit update: Production Readiness (2026-10-20)
 
-Chi tiết: [`production-readiness-audit.md`](production-readiness-audit.md). Các phát hiện gốc ở trên được giữ nguyên để làm lịch sử.
+Details: [`production-readiness-audit.md`](production-readiness-audit.md). The original findings above are kept unchanged as a historical record.
 
-| Mục         | Trạng thái mới                                                                                                                                                                                                                                                 |
-| ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| SEC-1 (P1)  | **Đã giảm thiểu, fail-closed.** `requireSession()` chạy ở Server Actions, pages và `backendRequest()`. Ở REST mode chưa cấu hình auth, backend nhận 0 request (đã kiểm chứng). Auth thật vẫn chờ tích hợp nhà cung cấp đăng nhập (`src/lib/auth-provider.ts`). |
-| SEC-4 (CSP) | **Đã sửa.** CSP "Without Nonces" và các security header trong `next.config.ts`; 0 vi phạm CSP trong E2E.                                                                                                                                                       |
-| CI          | Workflow qua `actionlint`; mọi bước chạy thành công trên bản copy sạch (đã sửa lỗi thiếu `public/`). Remote vẫn **NOT VERIFIED**.                                                                                                                              |
+| Item        | New status                                                                                                                                                                                                                                                                      |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| SEC-1 (P1)  | **Mitigated, fail-closed.** `requireSession()` runs in Server Actions, pages and `backendRequest()`. In REST mode without auth configured, the backend receives 0 requests (verified). Real auth still awaits integration with a sign-in provider (`src/lib/auth-provider.ts`). |
+| SEC-4 (CSP) | **Fixed.** CSP "Without Nonces" and security headers in `next.config.ts`; 0 CSP violations in E2E.                                                                                                                                                                              |
+| CI          | Workflow passes `actionlint`; every step succeeds on a clean copy (fixed a missing `public/`). Remote still **NOT VERIFIED**.                                                                                                                                                   |

@@ -1,85 +1,85 @@
-# Hướng dẫn về Component
+# Component Guidelines
 
-## 1. Trước khi tạo component mới
+## 1. Before creating a new component
 
-Đi lần lượt từ trên xuống. Dừng ở bước đầu tiên giải quyết được vấn đề:
+Go through these in order, from top to bottom. Stop at the first step that solves the problem:
 
-1. **Đã có sẵn chưa?** Xem `src/components/**` và Storybook (`pnpm storybook`).
-2. **Ghép từ component có sẵn được không?** Ví dụ `<EmptyState action={<Button>…</Button>} />`.
-3. **Thêm một prop hoặc variant cho component có sẵn được không?** Chỉ làm vậy khi nó vẫn đúng một trách nhiệm.
-4. **HTML native làm được không?** `<select>`, `<input type="date">`, `<dialog>`, `<details>`. Bạn được miễn phí accessibility và hỗ trợ mobile.
-5. Chỉ khi các bước trên không được mới tạo component mới.
+1. **Does it already exist?** Look in `src/components/**` and Storybook (`pnpm storybook`).
+2. **Can it be composed from existing components?** For example `<EmptyState action={<Button>…</Button>} />`.
+3. **Can you add a prop or variant to an existing component?** Only do this if the component still has a single responsibility.
+4. **Can native HTML do it?** `<select>`, `<input type="date">`, `<dialog>`, `<details>`. You get accessibility and mobile support for free.
+5. Only create a new component when none of the steps above work.
 
-**Nên tạo component khi:**
+**Create a component when:**
 
-- Cùng một đoạn UI lặp lại ≥ 2 lần với cùng ý nghĩa; hoặc
-- Một khối UI có trách nhiệm rõ ràng và làm file chứa nó dễ đọc hơn (ví dụ `TaskStatusSelect`).
+- The same piece of UI repeats ≥ 2 times with the same meaning; or
+- A block of UI has a clear responsibility and makes the file that contains it easier to read (for example `TaskStatusSelect`).
 
-**Không nên tạo component khi:**
+**Do not create a component when:**
 
-- Nó chỉ bọc một thẻ HTML kèm vài class cố định (`<Title>` = `<h2 className="…">`). Hãy dùng class trực tiếp.
-- Bạn đang đoán "sau này có thể cần". Chờ đến khi thật sự cần.
+- It only wraps one HTML tag plus a few fixed classes (`<Title>` = `<h2 className="…">`). Use the classes directly.
+- You are guessing that "it might be needed later". Wait until it is actually needed.
 
-## 2. Phân loại: shared hay feature?
+## 2. Classification: shared or feature?
 
 ```text
-Component có chứa kiến thức nghiệp vụ không?
-(tên domain như Task/Order/User, gọi Server Action, schema nghiệp vụ, label nghiệp vụ)
+Does the component contain business-domain knowledge?
+(domain names like Task/Order/User, calls a Server Action, business schema, business labels)
 │
-├── CÓ  → src/features/<feature>/components/
+├── YES → src/features/<feature>/components/
 │
-└── KHÔNG → Có dùng được ở một dự án khác domain không?
-            ├── CÓ  → src/components/<atoms|molecules|organisms|templates>/
-            └── CHƯA chắc → để trong feature trước; chuyển lên shared khi dùng lần thứ 2
+└── NO  → Could it be used in a project with a different domain?
+            ├── YES      → src/components/<atoms|molecules|organisms|templates>/
+            └── NOT SURE → keep it in the feature first; move it to shared on the 2nd use
 ```
 
-Ví dụ:
+Examples:
 
-| Component            | Ở đâu          | Vì sao                                     |
-| -------------------- | -------------- | ------------------------------------------ |
-| `Badge`              | atoms          | Không biết gì về task                      |
-| `TaskStatusBadge`    | features/tasks | Biết map `done` → `success` và nhãn "Done" |
-| `DataTable`          | organisms      | Bảng generic; ô do người gọi quyết định    |
-| `TaskTable`          | features/tasks | Biết các cột của Task và gọi action        |
-| `ConfirmationDialog` | molecules      | Xác nhận bất kỳ hành động nào              |
-| `DeleteTaskButton`   | features/tasks | Gọi `deleteTaskAction`                     |
+| Component            | Where          | Why                                                      |
+| -------------------- | -------------- | -------------------------------------------------------- |
+| `Badge`              | atoms          | Knows nothing about tasks                                |
+| `TaskStatusBadge`    | features/tasks | Knows how to map `done` → `success` and the label "Done" |
+| `DataTable`          | organisms      | Generic table; the caller decides the cells              |
+| `TaskTable`          | features/tasks | Knows the Task columns and calls actions                 |
+| `ConfirmationDialog` | molecules      | Confirms any action                                      |
+| `DeleteTaskButton`   | features/tasks | Calls `deleteTaskAction`                                 |
 
-`TaskCard` có chứa nhiều atom **không** có nghĩa nó là molecule dùng chung. Câu hỏi quyết định là **có kiến thức domain hay không**, không phải "ghép từ bao nhiêu atom".
+The fact that `TaskCard` contains many atoms does **not** mean it is a shared molecule. The deciding question is **whether it has domain knowledge**, not "how many atoms it is built from".
 
-## 3. Chọn cấp Atomic
+## 3. Choosing the Atomic level
 
-| Nếu component…                                                                      | Cấp                          |
-| ----------------------------------------------------------------------------------- | ---------------------------- |
-| Là một phần tử UI đơn, gần với một thẻ HTML, không chia nhỏ hơn được                | **Atom**                     |
-| Ghép vài atom để làm **một** việc (label + input + error; input + icon + nút clear) | **Molecule**                 |
-| Là một **khu vực** riêng của trang (header, sidebar, bảng, form lớn)                | **Organism**                 |
-| Là **khung bố cục** cả trang, có slot, không có nội dung thật                       | **Template**                 |
-| Là template + dữ liệu thật                                                          | **Page** = `app/**/page.tsx` |
+| If the component…                                                                             | Level                        |
+| --------------------------------------------------------------------------------------------- | ---------------------------- |
+| Is a single UI element, close to one HTML tag, and cannot be broken down further              | **Atom**                     |
+| Combines a few atoms to do **one** thing (label + input + error; input + icon + clear button) | **Molecule**                 |
+| Is a distinct **section** of the page (header, sidebar, table, large form)                    | **Organism**                 |
+| Is the **layout frame** of a whole page, with slots and no real content                       | **Template**                 |
+| Is a template + real data                                                                     | **Page** = `app/**/page.tsx` |
 
-Khi phân vân giữa hai cấp, hãy chọn cấp thấp hơn. Chuyển lên sau rất dễ: chỉ cần di chuyển file và sửa import.
+When you are unsure between two levels, choose the lower one. Moving it up later is easy: just move the file and fix the imports.
 
 ## 4. Composition
 
-Ưu tiên ghép component lại với nhau, thay vì một component với hàng chục prop boolean.
+Prefer composing components together over a single component with dozens of boolean props.
 
 ```tsx
-// Tốt: slot nhận ReactNode
+// Good: slots that accept a ReactNode
 <PageHeader title="Tasks" actions={<TaskFormDialog />} />
 <EmptyState title="No tasks" action={<Button>Create</Button>} />
 
-// Tốt: render prop khi component con cần nhận props từ cha
+// Good: render prop when the child component needs props from the parent
 <FormField label="Title" error={errors.title?.message}>
   {(field) => <Input {...field} {...register('title')} />}
 </FormField>
 
-// Tốt: dựng component từ component nhỏ hơn
+// Good: build a component from smaller components
 // ConfirmationDialog = Dialog + Alert + 2 Button
 
-// Tránh: một component làm mọi thứ
+// Avoid: one component that does everything
 <Modal isConfirm isForm isDelete showFooter footerAlign="right" … />
 ```
 
-Mẫu chuẩn khi viết một shared component (xem `src/components/atoms/button.tsx`):
+Standard pattern for writing a shared component (see `src/components/atoms/button.tsx`):
 
 ```tsx
 import { cva, type VariantProps } from 'class-variance-authority'
@@ -101,48 +101,48 @@ export function Thing({ className, variant, size, ...props }: ThingProps) {
 
 Checklist:
 
-- [ ] Props có type đầy đủ, không có `any`; mở rộng `ComponentProps<'tag'>` khi component bọc một thẻ HTML.
-- [ ] Nhận `className` và merge bằng `cn()`, để class của người gọi được ưu tiên.
-- [ ] Chỉ dùng token màu (`bg-primary`, `text-muted-foreground`), không dùng hex.
-- [ ] Accessibility: có label/`aria-label`; icon trang trí có `aria-hidden`; `aria-invalid` khi có lỗi; điều khiển được bằng bàn phím.
-- [ ] Xử lý các trạng thái disabled, loading và error khi phù hợp.
-- [ ] Không thêm `'use client'` nếu không dùng state, effect hay event handler.
-- [ ] Có test cho hành vi quan trọng (`*.test.tsx`) và story (`*.stories.tsx`) nếu là component hiển thị.
-- [ ] Đặt tên file kebab-case (`search-input.tsx`), tên export PascalCase (`SearchInput`), dùng named export.
+- [ ] Props are fully typed, with no `any`; extend `ComponentProps<'tag'>` when the component wraps an HTML tag.
+- [ ] Accepts `className` and merges it with `cn()`, so the caller's classes take precedence.
+- [ ] Uses only colour tokens (`bg-primary`, `text-muted-foreground`), no hex values.
+- [ ] Accessibility: has a label/`aria-label`; decorative icons have `aria-hidden`; `aria-invalid` when there is an error; operable with the keyboard.
+- [ ] Handles disabled, loading and error states where appropriate.
+- [ ] Does not add `'use client'` if it uses no state, effects or event handlers.
+- [ ] Has tests for important behaviour (`*.test.tsx`) and a story (`*.stories.tsx`) if it is a visual component.
+- [ ] File name in kebab-case (`search-input.tsx`), export name in PascalCase (`SearchInput`), uses a named export.
 
-## 5. Khi nào chuyển component từ feature lên shared
+## 5. When to move a component from a feature to shared
 
-Chỉ chuyển khi **cả ba** điều sau đúng:
+Only move it when **all three** of the following are true:
 
-1. Component được dùng (hoặc cần dùng) ở ≥ 2 feature.
-2. Có thể bỏ hết kiến thức domain: tên prop trung tính (`items`, `label`, `onConfirm` thay vì `tasks`, `onDeleteTask`).
-3. Phần domain còn lại có thể truyền vào qua props hoặc slot.
+1. The component is used (or needs to be used) in ≥ 2 features.
+2. All domain knowledge can be removed: neutral prop names (`items`, `label`, `onConfirm` instead of `tasks`, `onDeleteTask`).
+3. The remaining domain parts can be passed in through props or slots.
 
-Các bước:
+Steps:
 
-1. Tách phần generic sang `components/<cấp>/`, đổi tên cho trung tính.
-2. Giữ một wrapper mỏng trong feature nếu cần. Ví dụ `TaskStatusBadge` dùng `Badge`.
-3. Thêm test và story cho component shared.
-4. Chạy `pnpm lint` để chắc chắn shared không import ngược lại feature.
+1. Extract the generic part into `components/<level>/` and give it a neutral name.
+2. Keep a thin wrapper in the feature if needed. For example `TaskStatusBadge` uses `Badge`.
+3. Add tests and a story for the shared component.
+4. Run `pnpm lint` to make sure shared code does not import back into the feature.
 
-## 6. Anti-pattern thường gặp
+## 6. Common anti-patterns
 
-| Anti-pattern                                                         | Vấn đề                                                       | Cách làm đúng                                                                                             |
-| -------------------------------------------------------------------- | ------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------- |
-| Đưa `TaskCard` vào `molecules/` vì "nó ghép từ atoms"                | Design system bị lẫn nghiệp vụ                               | Để trong `features/tasks/components/`                                                                     |
-| Atom gọi API hoặc Server Action                                      | Không dùng lại được, khó test                                | Feature gọi; atom chỉ nhận props                                                                          |
-| Mỗi cấp bọc thêm một lớp (`TaskButton` → `PrimaryButton` → `Button`) | Thêm tầng mà không thêm giá trị                              | Dùng `Button variant="primary"`                                                                           |
-| God component 500 dòng                                               | Khó đọc, khó test                                            | Tách theo trách nhiệm: filters, table, form                                                               |
-| `'use client'` ở page hoặc layout                                    | Cả cây bị đẩy xuống client, mất lợi ích của Server Component | Chỉ đặt ở lá (leaf) tương tác                                                                             |
-| Truyền prop qua 4–5 tầng (prop drilling)                             | Dễ vỡ khi refactor                                           | Composition (slot), URL state, hoặc để Server Component con tự lấy dữ liệu                                |
-| Thêm Redux/Zustand "cho chắc"                                        | Phức tạp không cần thiết                                     | URL state + Server Components; thêm global state khi có nhu cầu thật                                      |
-| Viết lại Modal, Select hay Date picker từ đầu                        | Sai về accessibility (focus, phím)                           | Dùng native element (`<dialog>`, `<select>`, `<input type="date">`) hoặc headless library đã trưởng thành |
-| Hard-code màu `#3b82f6`                                              | Không đổi theme được                                         | Dùng token                                                                                                |
-| Barrel `index.ts` ở mọi thư mục                                      | Kéo code server vào bundle client, dễ tạo vòng import        | Import trực tiếp từ file                                                                                  |
+| Anti-pattern                                                                | Problem                                                                          | The right way                                                                                    |
+| --------------------------------------------------------------------------- | -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| Putting `TaskCard` in `molecules/` because "it is built from atoms"         | The design system gets mixed with business logic                                 | Keep it in `features/tasks/components/`                                                          |
+| An atom calls an API or a Server Action                                     | Not reusable, hard to test                                                       | The feature makes the call; the atom only receives props                                         |
+| Each level adds another wrapper (`TaskButton` → `PrimaryButton` → `Button`) | Adds layers without adding value                                                 | Use `Button variant="primary"`                                                                   |
+| 500-line god component                                                      | Hard to read, hard to test                                                       | Split by responsibility: filters, table, form                                                    |
+| `'use client'` in a page or layout                                          | The whole tree is pushed to the client, losing the benefits of Server Components | Only put it on interactive leaves                                                                |
+| Passing props through 4–5 levels (prop drilling)                            | Breaks easily during refactoring                                                 | Composition (slots), URL state, or let child Server Components fetch their own data              |
+| Adding Redux/Zustand "just in case"                                         | Unnecessary complexity                                                           | URL state + Server Components; add global state when there is a real need                        |
+| Rewriting Modal, Select or Date picker from scratch                         | Gets accessibility wrong (focus, keys)                                           | Use native elements (`<dialog>`, `<select>`, `<input type="date">`) or a mature headless library |
+| Hard-coding the colour `#3b82f6`                                            | The theme cannot be changed                                                      | Use tokens                                                                                       |
+| A barrel `index.ts` in every folder                                         | Pulls server code into the client bundle, easily creates import cycles           | Import directly from the file                                                                    |
 
 ## 7. Storybook
 
-- Story nằm cạnh component: `button.stories.tsx`.
-- `title` theo cấp: `'Atoms/Button'`, `'Molecules/FormField'`, `'Templates/DashboardTemplate'`.
-- Thanh toolbar có nút đổi **Theme** (light/dark). Addon **a11y** báo lỗi accessibility ngay trong story.
-- Chỉ viết story cho component shared. UI của feature được kiểm tra bằng test và E2E.
+- Stories live next to the component: `button.stories.tsx`.
+- `title` follows the level: `'Atoms/Button'`, `'Molecules/FormField'`, `'Templates/DashboardTemplate'`.
+- The toolbar has a button to switch the **Theme** (light/dark). The **a11y** addon reports accessibility errors directly in the story.
+- Only write stories for shared components. Feature UI is checked with tests and E2E.

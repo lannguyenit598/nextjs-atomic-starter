@@ -7,7 +7,7 @@ description: 'Choose and run the right checks for a change (Vitest, React Testin
 
 ## Read first
 
-`docs/ai/rules/testing.md`: the **"Kiểm tra theo loại thay đổi"** table decides what to run. Scripts are in `package.json`.
+`docs/ai/rules/testing.md`: the **"Checks by change type"** table decides what to run. Scripts are in `package.json`.
 
 ## Steps
 

@@ -1,170 +1,170 @@
 # Atomic Design Next.js Template
 
-**Tiếng Việt** | [English](README.en.md)
+**English** | [Tiếng Việt](README.vi.md)
 
-Starter template cho các dự án Next.js production: admin dashboard, ứng dụng nội bộ, SaaS, hệ thống quản lý dùng REST API.
+A starter template for production Next.js projects: admin dashboards, internal tools, SaaS apps and management systems backed by a REST API.
 
-Kiến trúc: **Hybrid Atomic Design + Feature-Based**.
+Architecture: **Hybrid Atomic Design + Feature-Based**.
 
-- **Atomic Design** tổ chức các UI component dùng chung (design system).
-- **Feature module** tổ chức các chức năng nghiệp vụ.
+- **Atomic Design** organizes the shared UI components (the design system).
+- **Feature modules** organize business functionality.
 
 ---
 
 ## Tech stack
 
-| Nhóm      | Thư viện                                                                                             | Lý do                                              |
-| --------- | ---------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
-| Framework | Next.js 16 (App Router, Cache Components), React 19, TypeScript strict                               | Server Components, Server Actions, streaming       |
-| Styling   | Tailwind CSS 4, CSS variables (design tokens), `class-variance-authority`, `clsx` + `tailwind-merge` | Token tập trung, variant có type                   |
-| Icons     | `lucide-react`                                                                                       | Nhẹ, tree-shakable                                 |
-| Form      | React Hook Form, Zod 4, `@hookform/resolvers`                                                        | Một schema dùng cho cả client và server validation |
-| Data      | Native `fetch` + typed client (`src/lib/api`)                                                        | Không cần thư viện, chạy được ở server và client   |
-| Test      | Vitest, React Testing Library, Playwright                                                            | Unit/component + E2E                               |
-| Quality   | ESLint (next + boundaries), Prettier, Husky + lint-staged, GitHub Actions                            |                                                    |
-| Docs UI   | Storybook 10 (`@storybook/nextjs-vite`, addon a11y)                                                  | Phát triển và xem component độc lập                |
+| Area      | Libraries                                                                                            | Why                                               |
+| --------- | ---------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
+| Framework | Next.js 16 (App Router, Cache Components), React 19, strict TypeScript                               | Server Components, Server Actions, streaming      |
+| Styling   | Tailwind CSS 4, CSS variables (design tokens), `class-variance-authority`, `clsx` + `tailwind-merge` | Centralized tokens, typed variants                |
+| Icons     | `lucide-react`                                                                                       | Lightweight, tree-shakable                        |
+| Forms     | React Hook Form, Zod 4, `@hookform/resolvers`                                                        | One schema for both client and server validation  |
+| Data      | Native `fetch` + typed client (`src/lib/api`)                                                        | No extra library; works on both server and client |
+| Testing   | Vitest, React Testing Library, Playwright                                                            | Unit/component + E2E                              |
+| Quality   | ESLint (next + boundaries), Prettier, Husky + lint-staged, GitHub Actions                            |                                                   |
+| Docs UI   | Storybook 10 (`@storybook/nextjs-vite`, a11y addon)                                                  | Build and review components in isolation          |
 
-**Cố ý không dùng:**
+**Deliberately not used:**
 
-- **Thư viện UI đầy đủ** (MUI, Ant Design...). Component tự viết, nằm trong repo.
-- **Headless library cho Dialog.** Dùng `<dialog>` native: trình duyệt tự lo focus trap, nút Esc và trả focus.
-- **TanStack Query.** Demo dùng Server Components + Server Actions là đủ. Khi nào nên thêm: xem [docs/api-integration.md](docs/api-integration.md) (mục "Client-side fetching").
-- **Global state** (Redux/Zustand). Chưa có nhu cầu thật; state của filter nằm trên URL.
-- **ESLint 10 / TypeScript 6+.** Plugin của `eslint-config-next` 16.4 chưa hỗ trợ (peer dependency). Template đang giữ ESLint 9 và TypeScript 5.9.
+- **A full UI library** (MUI, Ant Design...). Components are written in-house and live in the repo.
+- **A headless library for dialogs.** The native `<dialog>` element is used: the browser handles focus trapping, Escape and focus return.
+- **TanStack Query.** The demo only needs Server Components + Server Actions. For when to add it, see [docs/api-integration.md](docs/api-integration.md) (section "Client-side fetching").
+- **Global state** (Redux/Zustand). There is no real need yet; filter state lives in the URL.
+- **ESLint 10 / TypeScript 6+.** The plugins in `eslint-config-next` 16.4 don't support them yet (peer dependencies). The template stays on ESLint 9 and TypeScript 5.9.
 
-## Yêu cầu
+## Requirements
 
-- Node.js `^22.22.2`, `^24.15.0` hoặc `>=26` (giới hạn bởi Vitest, jsdom và lint-staged). Bản dùng chung cho local và CI nằm trong `.nvmrc` (24); chạy `nvm use` hoặc `fnm use` để chọn đúng version.
-- pnpm (version được khóa trong `packageManager` của `package.json`). Cài đặt qua Corepack:
+- Node.js `^22.22.2`, `^24.15.0` or `>=26` (constrained by Vitest, jsdom and lint-staged). The version shared by local and CI is in `.nvmrc` (24); run `nvm use` or `fnm use` to select it.
+- pnpm (version pinned in the `packageManager` field of `package.json`). Install it via Corepack:
 
 ```bash
-corepack enable   # một lần trên máy. Sau đó lệnh `pnpm` dùng đúng version của project
+corepack enable   # once per machine; afterwards `pnpm` uses the project's version
 ```
 
-## Cài đặt và chạy
+## Install and run
 
 ```bash
 pnpm install
-cp .env.example .env.local     # tùy chọn: mặc định đã chạy demo mode
+cp .env.example .env.local     # optional: demo mode is the default
 pnpm dev                       # http://localhost:3000
 ```
 
 ### Environment
 
-| Biến                   | Phạm vi | Mặc định       | Ý nghĩa                                                                                  |
-| ---------------------- | ------- | -------------- | ---------------------------------------------------------------------------------------- |
-| `API_MODE`             | server  | `demo`         | `demo` = dữ liệu in-memory, `rest` = gọi backend thật                                    |
-| `API_BASE_URL`         | server  | (không có)     | Bắt buộc khi `API_MODE=rest`                                                             |
-| `API_TOKEN`            | server  | (không có)     | Service token, gửi dạng `Authorization: Bearer` (chỉ từ server)                          |
-| `API_TIMEOUT_MS`       | server  | `10000`        | Timeout cho mỗi request                                                                  |
-| `AUTH_ALLOW_ANONYMOUS` | server  | `false`        | **Nguy hiểm.** `true` = bỏ qua đăng nhập ở `API_MODE=rest`; chỉ dùng sau VPN/SSO gateway |
-| `NEXT_PUBLIC_APP_NAME` | public  | `Atomic Admin` | Tên app, được inline vào bundle trình duyệt                                              |
+| Variable               | Scope  | Default        | Meaning                                                                                |
+| ---------------------- | ------ | -------------- | -------------------------------------------------------------------------------------- |
+| `API_MODE`             | server | `demo`         | `demo` = in-memory data, `rest` = call a real backend                                  |
+| `API_BASE_URL`         | server | (none)         | Required when `API_MODE=rest`                                                          |
+| `API_TOKEN`            | server | (none)         | Service token, sent as `Authorization: Bearer` (server-side only)                      |
+| `API_TIMEOUT_MS`       | server | `10000`        | Timeout per request                                                                    |
+| `AUTH_ALLOW_ANONYMOUS` | server | `false`        | **Dangerous.** `true` = skip sign-in in `API_MODE=rest`; only behind a VPN/SSO gateway |
+| `NEXT_PUBLIC_APP_NAME` | public | `Atomic Admin` | App name, inlined into the browser bundle                                              |
 
-- Env được validate bằng Zod trong `src/lib/env.ts`. `src/instrumentation.ts` chạy bước kiểm tra này khi server khởi động: cấu hình sai thì process thoát với exit code 1, kèm thông báo rõ ràng.
-- Biến có prefix `NEXT_PUBLIC_` sẽ lộ ra trình duyệt. **Không bao giờ** đặt secret vào đó.
+- Env is validated with Zod in `src/lib/env.ts`. `src/instrumentation.ts` runs this check when the server starts: an invalid configuration makes the process exit with code 1 and a clear message.
+- Variables prefixed with `NEXT_PUBLIC_` are exposed to the browser. **Never** put secrets in them.
 
 ## Scripts
 
-| Lệnh                                                   | Việc                                                          |
-| ------------------------------------------------------ | ------------------------------------------------------------- |
-| `pnpm dev`                                             | Dev server (Turbopack)                                        |
-| `pnpm build` / `pnpm start`                            | Build production / chạy bản build                             |
-| `pnpm typecheck`                                       | Sinh route types + `tsc --noEmit`                             |
-| `pnpm lint` / `pnpm lint:fix`                          | ESLint (bao gồm luật phụ thuộc giữa các layer)                |
-| `pnpm format` / `pnpm format:check`                    | Prettier (tự sắp xếp class Tailwind)                          |
-| `pnpm test` / `pnpm test:watch` / `pnpm test:coverage` | Vitest                                                        |
-| `pnpm test:e2e`                                        | Playwright (lần đầu: `pnpm exec playwright install chromium`) |
-| `pnpm storybook` / `pnpm build-storybook`              | Storybook tại http://localhost:6006                           |
-| `pnpm check`                                           | typecheck + lint + format:check + test + agents:check         |
-| `pnpm agents:sync` / `pnpm agents:check`               | Sinh/kiểm tra cấu hình AI agent (xem `docs/ai/README.md`)     |
+| Command                                                | What it does                                                     |
+| ------------------------------------------------------ | ---------------------------------------------------------------- |
+| `pnpm dev`                                             | Dev server (Turbopack)                                           |
+| `pnpm build` / `pnpm start`                            | Production build / run the build                                 |
+| `pnpm typecheck`                                       | Generate route types + `tsc --noEmit`                            |
+| `pnpm lint` / `pnpm lint:fix`                          | ESLint (including the layer dependency rules)                    |
+| `pnpm format` / `pnpm format:check`                    | Prettier (sorts Tailwind classes automatically)                  |
+| `pnpm test` / `pnpm test:watch` / `pnpm test:coverage` | Vitest                                                           |
+| `pnpm test:e2e`                                        | Playwright (first time: `pnpm exec playwright install chromium`) |
+| `pnpm storybook` / `pnpm build-storybook`              | Storybook at http://localhost:6006                               |
+| `pnpm check`                                           | typecheck + lint + format:check + test + agents:check            |
+| `pnpm agents:sync` / `pnpm agents:check`               | Generate/validate AI agent config (see `docs/ai/README.md`)      |
 
-Pre-commit hook (Husky + lint-staged) tự chạy ESLint và Prettier trên các file đã stage.
+A pre-commit hook (Husky + lint-staged) runs ESLint and Prettier on staged files.
 
-## Cấu trúc thư mục
+## Project structure
 
 ```text
 src/
-├── app/                      # ROUTING ONLY: route, layout, loading/error, metadata
-│   ├── layout.tsx            # Root layout: font, theme script, globals.css
+├── app/                      # ROUTING ONLY: routes, layouts, loading/error, metadata
+│   ├── layout.tsx            # Root layout: fonts, theme script, globals.css
 │   ├── not-found.tsx
-│   ├── global-error.tsx      # Error boundary cuối cùng (lỗi ở root layout)
+│   ├── global-error.tsx      # Last-resort error boundary (root layout errors)
 │   ├── globals.css           # Design tokens (CSS variables) + Tailwind theme
-│   └── (app)/                # Route group: các màn hình dùng DashboardTemplate
-│       ├── layout.tsx        # Lắp organisms vào DashboardTemplate
-│       ├── error.tsx         # Error boundary giữ nguyên shell
+│   └── (app)/                # Route group: screens that use DashboardTemplate
+│       ├── layout.tsx        # Plugs organisms into DashboardTemplate
+│       ├── error.tsx         # Error boundary that keeps the shell
 │       ├── dashboard/page.tsx
 │       └── tasks/page.tsx
-├── components/               # SHARED DESIGN SYSTEM (không có business logic)
+├── components/               # SHARED DESIGN SYSTEM (no business logic)
 │   ├── atoms/                # Button, Input, Select, Badge, Card, Spinner, Skeleton...
 │   ├── molecules/            # FormField, SearchInput, Dialog, ConfirmationDialog, Pagination...
 │   ├── organisms/            # AppSidebar, AppHeader, MobileNav, DataTable
 │   └── templates/            # DashboardTemplate
 ├── features/                 # BUSINESS FEATURES
 │   └── tasks/
-│       ├── schemas.ts        # Zod schema = nguồn sự thật của domain
-│       ├── types.ts          # Type suy ra từ schema + TaskRepository contract
-│       ├── constants.ts      # Label, mapping status → badge
-│       ├── actions.ts        # Server Actions (mutation)
+│       ├── schemas.ts        # Zod schemas = the domain's source of truth
+│       ├── types.ts          # Types inferred from schemas + TaskRepository contract
+│       ├── constants.ts      # Labels, status → badge mapping
+│       ├── actions.ts        # Server Actions (mutations)
 │       ├── services/         # Data access: demo adapter, REST adapter, selector
-│       └── components/       # UI riêng của feature: TaskTable, TaskForm...
-├── lib/                      # Hạ tầng dùng chung, không phụ thuộc feature
+│       └── components/       # Feature-specific UI: TaskTable, TaskForm...
+├── lib/                      # Shared infrastructure, independent of features
 │   ├── api/http-client.ts    # Typed fetch: timeout, ApiError, response validation
-│   ├── api/backend.ts        # server-only: gọi backend với base URL + token
+│   ├── api/backend.ts        # server-only: calls the backend with base URL + token
 │   ├── auth.ts               # server-only: Session, getSession(), requireSession() (fail-closed)
-│   ├── auth-provider.ts      # resolveSession(): điểm tích hợp nhà cung cấp đăng nhập
+│   ├── auth-provider.ts      # resolveSession(): sign-in provider integration point
 │   ├── env.ts                # server-only env (Zod)
-│   ├── action-result.ts      # Kiểu trả về chuẩn của Server Action
+│   ├── action-result.ts      # Standard Server Action return type
 │   ├── theme.ts              # Light/dark theme
 │   └── utils.ts              # cn(), formatDate()
 ├── config/                   # navigation.tsx, site.ts
-├── instrumentation.ts        # Chạy khi server start: validate env (fail fast)
-├── instrumentation-client.ts # Chạy trên trình duyệt trước hydration: cấu hình Zod cho CSP
+├── instrumentation.ts        # Runs on server start: validates env (fail fast)
+├── instrumentation-client.ts # Runs in the browser before hydration: Zod config for the CSP
 └── test/                     # Vitest setup
-e2e/                          # Playwright specs; fixtures.ts bắt vi phạm CSP ở mọi test
-docs/                         # Tài liệu kiến trúc và hướng dẫn; docs/ai/ = rules cho AI agent
-.agents/                      # Skills + scoped rules dùng chung cho AI agent (nguồn)
-.claude/                      # Sinh tự động từ .agents/ cho Claude Code (pnpm agents:sync)
+e2e/                          # Playwright specs; fixtures.ts fails any test with a CSP violation
+docs/                         # Architecture docs and guides; docs/ai/ = rules for AI agents
+.agents/                      # Shared AI agent skills + scoped rules (source)
+.claude/                      # Generated from .agents/ for Claude Code (pnpm agents:sync)
 scripts/                      # sync-agent-config.mjs
-.storybook/                   # Cấu hình Storybook
+.storybook/                   # Storybook config
 .github/workflows/ci.yml      # CI
 ```
 
-Chưa có `src/hooks/`, `src/providers/`, `src/types/` vì chưa có code nào cần đến. Khi cần thì tạo, theo quy tắc trong [docs/architecture.md](docs/architecture.md) (mục "Dependency rules").
+There is no `src/hooks/`, `src/providers/` or `src/types/` yet because no code needs them. Create them when needed, following the rules in [docs/architecture.md](docs/architecture.md) (section "Dependency rules").
 
 ## Testing
 
 ```bash
 pnpm test                 # unit + component (jsdom)
-pnpm test:coverage        # kèm coverage report trong ./coverage
-pnpm exec playwright install chromium   # một lần
-pnpm test:e2e             # E2E: local chạy `pnpm dev`, CI chạy `pnpm start`
+pnpm test:coverage        # with a coverage report in ./coverage
+pnpm exec playwright install chromium   # once
+pnpm test:e2e             # E2E: runs `pnpm dev` locally, `pnpm start` in CI
 ```
 
-| Loại      | Vị trí                      | Test gì                                                                      |
-| --------- | --------------------------- | ---------------------------------------------------------------------------- |
-| Unit      | `*.test.ts` cạnh file nguồn | Schema, repository, HTTP client, Server Actions (đã mock repository)         |
-| Component | `*.test.tsx` cạnh component | Hành vi và accessibility: role, label, trạng thái disabled/error             |
-| E2E       | `e2e/*.spec.ts`             | Luồng thật trên trình duyệt: CRUD task, filter, focus của dialog, mobile nav |
+| Type      | Location                           | What it tests                                                                 |
+| --------- | ---------------------------------- | ----------------------------------------------------------------------------- |
+| Unit      | `*.test.ts` next to the source     | Schemas, repositories, HTTP client, Server Actions (with a mocked repository) |
+| Component | `*.test.tsx` next to the component | Behavior and accessibility: roles, labels, disabled/error states              |
+| E2E       | `e2e/*.spec.ts`                    | Real browser flows: task CRUD, filters, dialog focus, mobile nav              |
 
-Quy ước:
+Conventions:
 
-- Query theo role và label (`getByRole('button', { name: 'Save' })`), không theo class CSS. Test như vậy cũng kiểm tra luôn accessibility.
-- Async Server Component không render được bằng RTL. Hãy test logic của nó (repository, schema) bằng unit test, và test cả trang bằng E2E.
-- jsdom chưa hỗ trợ `<dialog>.showModal()`. `src/test/setup.ts` có một stub tối thiểu; hành vi focus thật được kiểm tra bằng Playwright.
+- Query by role and label (`getByRole('button', { name: 'Save' })`), not by CSS class. Tests written this way also check accessibility.
+- Async Server Components can't be rendered with RTL. Unit-test their logic (repositories, schemas) and cover the whole page with E2E.
+- jsdom doesn't support `<dialog>.showModal()` yet. `src/test/setup.ts` provides a minimal stub; real focus behavior is tested with Playwright.
 
-## Tạo project mới từ template
+## Starting a new project from the template
 
-1. Copy repo (GitHub: **Use this template**, hoặc `git clone` rồi xóa `.git` và chạy `git init`).
-2. Đổi `name` trong `package.json` và `NEXT_PUBLIC_APP_NAME`.
-3. Đổi màu và font trong `src/app/globals.css` (chỉ sửa token, không sửa component).
-4. Sửa menu trong `src/config/navigation.tsx`.
-5. Thêm feature theo [docs/create-new-feature.md](docs/create-new-feature.md).
-6. Nối backend theo [docs/api-integration.md](docs/api-integration.md): đặt `API_MODE=rest` và `API_BASE_URL`.
-7. Khi không cần demo nữa: xóa `src/features/tasks`, `src/app/(app)/tasks`, item `Tasks` trong navigation, phần task trên dashboard và `e2e/tasks.spec.ts`.
+1. Copy the repo (GitHub: **Use this template**, or `git clone`, delete `.git` and run `git init`).
+2. Change `name` in `package.json` and `NEXT_PUBLIC_APP_NAME`.
+3. Change colors and fonts in `src/app/globals.css` (edit tokens only, not components).
+4. Edit the menu in `src/config/navigation.tsx`.
+5. Add features by following [docs/create-new-feature.md](docs/create-new-feature.md).
+6. Connect your backend by following [docs/api-integration.md](docs/api-integration.md): set `API_MODE=rest` and `API_BASE_URL`.
+7. When you no longer need the demo: delete `src/features/tasks`, `src/app/(app)/tasks`, the `Tasks` item in navigation, the task section of the dashboard and `e2e/tasks.spec.ts`.
 
 ## AI coding agents
 
-Claude Code, Codex, Antigravity và OpenCode dùng chung một bộ rules và skills: `AGENTS.md` (cổng vào), `docs/ai/rules/` (quy tắc), `.agents/skills/` (skill). Cách dùng và bảo trì: [docs/ai/README.md](docs/ai/README.md).
+Claude Code, Codex, Antigravity and OpenCode share one set of rules and skills: `AGENTS.md` (entry point), `docs/ai/rules/` (rules), `.agents/skills/` (skills). Usage and maintenance: [docs/ai/README.md](docs/ai/README.md).
 
 ## Production
 
@@ -172,7 +172,7 @@ Claude Code, Codex, Antigravity và OpenCode dùng chung một bộ rules và sk
 pnpm build && pnpm start
 ```
 
-> **Authentication (fail-closed):** template không tự chọn nhà cung cấp đăng nhập. Ở `API_MODE=rest`, cho tới khi bạn hiện thực `resolveSession()` trong `src/lib/auth-provider.ts`, mọi trang hiển thị "Sign-in required", mọi mutation bị từ chối, và **không request nào tới được backend**. Xem [docs/api-integration.md](docs/api-integration.md), mục "Authentication". Demo mode không cần đăng nhập.
+> **Authentication (fail-closed):** the template doesn't pick a sign-in provider for you. In `API_MODE=rest`, until you implement `resolveSession()` in `src/lib/auth-provider.ts`, every page shows "Sign-in required", every mutation is refused, and **no request reaches the backend**. See [docs/api-integration.md](docs/api-integration.md), section "Authentication". Demo mode needs no sign-in.
 
-- Demo mode lưu dữ liệu trong RAM của server: **mất khi restart** và **không chia sẻ giữa các instance**. Production phải dùng `API_MODE=rest`.
-- Lỗi của Server Action được log ở server. Hãy gắn một error reporter (Sentry, Datadog...) tại `src/lib/action-result.ts` và `src/app/(app)/error.tsx`.
+- Demo mode keeps data in server memory: it is **lost on restart** and **not shared between instances**. Production must use `API_MODE=rest`.
+- Server Action errors are logged on the server. Hook up an error reporter (Sentry, Datadog...) in `src/lib/action-result.ts` and `src/app/(app)/error.tsx`.

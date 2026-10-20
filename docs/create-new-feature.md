@@ -1,8 +1,8 @@
-# Tutorial: thêm feature Product Management
+# Tutorial: adding a Product Management feature
 
-Mục tiêu: trang `/products` hiển thị danh sách sản phẩm (có search), tạo mới và xóa sản phẩm. Ban đầu chạy với demo data, sau đó nối REST API.
+Goal: a `/products` page that shows a product list (with search), and lets you create and delete products. It first runs on demo data, then gets connected to a REST API.
 
-Hãy mở `src/features/tasks/` bên cạnh để đối chiếu. Mọi bước dưới đây làm theo đúng mẫu đó.
+Keep `src/features/tasks/` open next to it for comparison. Every step below follows that exact pattern.
 
 ```text
 src/features/products/
@@ -11,7 +11,7 @@ src/features/products/
 ├── services/
 │   ├── demo-product-repository.ts     # 3a. Demo data
 │   ├── rest-product-repository.ts     # 3b. REST adapter
-│   └── product-repository.ts          # 3c. Chọn adapter theo API_MODE
+│   └── product-repository.ts          # 3c. Pick the adapter based on API_MODE
 ├── actions.ts                         # 4. Server Actions
 └── components/
     ├── product-table.tsx              # 5. UI (server)
@@ -20,11 +20,11 @@ src/app/(app)/products/page.tsx        # 6. Route
 src/config/navigation.tsx              # 7. Menu
 ```
 
-Bắt đầu với file. Chỉ tách thành thư mục (`schemas/`, `hooks/`...) khi file đó trở nên quá lớn.
+Start with single files. Only split into folders (`schemas/`, `hooks/`...) when a file becomes too large.
 
-## Bước 1: Schema (`schemas.ts`)
+## Step 1: Schema (`schemas.ts`)
 
-Schema là nguồn sự thật của domain. Nó được dùng để validate response từ backend, validate form ở client và validate lại trong Server Action.
+The schema is the source of truth for the domain. It is used to validate backend responses, validate the form on the client, and validate again inside the Server Action.
 
 ```ts
 import { z } from 'zod'
@@ -58,7 +58,7 @@ export const productFormSchema = z.object({
   status: z.enum(PRODUCT_STATUSES),
 })
 
-// Id sẽ được ghép vào URL của backend: dùng allowlist, chặn '.', '..', '/'.
+// The id is inserted into the backend URL: use an allowlist, block '.', '..', '/'.
 export const productIdSchema = z.string().regex(/^[A-Za-z0-9_-]{1,100}$/)
 
 export const productListQuerySchema = z.object({
@@ -67,7 +67,7 @@ export const productListQuerySchema = z.object({
 })
 ```
 
-## Bước 2: Types (`types.ts`)
+## Step 2: Types (`types.ts`)
 
 ```ts
 import type { z } from 'zod'
@@ -86,9 +86,9 @@ export type ProductRepository = {
 }
 ```
 
-Type được suy ra (`z.infer`) từ schema, nên không bao giờ lệch khỏi phần validate.
+The types are inferred (`z.infer`) from the schema, so they can never drift away from the validation.
 
-## Bước 3: Services
+## Step 3: Services
 
 ### 3a. Demo (`services/demo-product-repository.ts`)
 
@@ -174,7 +174,7 @@ export const productRepository: ProductRepository =
   serverEnv.API_MODE === 'rest' ? restProductRepository : demoProductRepository
 ```
 
-## Bước 4: Server Actions (`actions.ts`)
+## Step 4: Server Actions (`actions.ts`)
 
 ```ts
 'use server'
@@ -189,7 +189,7 @@ import { productRepository } from './services/product-repository'
 
 export async function createProductAction(input: unknown): Promise<ActionResult> {
   try {
-    await requireSession('products:write') // luôn là dòng đầu tiên
+    await requireSession('products:write') // always the first line
     const parsed = productFormSchema.safeParse(input)
     if (!parsed.success) return validationFailure(parsed.error)
     await productRepository.create(parsed.data)
@@ -214,11 +214,11 @@ export async function deleteProductAction(id: unknown): Promise<ActionResult> {
 }
 ```
 
-Tham số có kiểu `unknown`, vì Server Action là endpoint public: không tin dữ liệu từ client. `requireSession()` chạy **trước** bước validate; ở demo mode luôn có session, còn ở REST mode nó kiểm tra người dùng thật (xem `docs/api-integration.md`, mục 8).
+The parameters are typed `unknown` because a Server Action is a public endpoint: do not trust data from the client. `requireSession()` runs **before** validation; in demo mode there is always a session, while in REST mode it checks the real user (see `docs/api-integration.md`, section 8).
 
-## Bước 5: Components
+## Step 5: Components
 
-### `components/product-table.tsx` (Server Component, ghép từ `DataTable`)
+### `components/product-table.tsx` (Server Component, built from `DataTable`)
 
 ```tsx
 import { Badge } from '@/components/atoms/badge'
@@ -256,9 +256,9 @@ export function ProductTable({ products }: { products: Product[] }) {
 
 ### `components/product-form-dialog.tsx` (Client Component)
 
-Copy cấu trúc từ `features/tasks/components/task-form.tsx` và `task-form-dialog.tsx`. Có hai điểm khác:
+Copy the structure from `features/tasks/components/task-form.tsx` and `task-form-dialog.tsx`. There are two differences:
 
-- Field dạng số dùng `register('price', { valueAsNumber: true })`.
+- Numeric fields use `register('price', { valueAsNumber: true })`.
 - `onSubmit={createProductAction}`.
 
 ```tsx
@@ -275,9 +275,9 @@ Copy cấu trúc từ `features/tasks/components/task-form.tsx` và `task-form-d
 </FormField>
 ```
 
-Không cần tự viết Dialog, FormField hay Button: tất cả đã có sẵn trong design system.
+You do not need to write your own Dialog, FormField or Button: they all already exist in the design system.
 
-## Bước 6: Route (`src/app/(app)/products/page.tsx`)
+## Step 6: Route (`src/app/(app)/products/page.tsx`)
 
 ```tsx
 import type { Metadata } from 'next'
@@ -306,7 +306,7 @@ export default function ProductsPage({ searchParams }: PageProps<'/products'>) {
 }
 
 async function ProductList({ searchParams }: Pick<PageProps<'/products'>, 'searchParams'>) {
-  const raw = await searchParams // request-time data trước, để session không bị đánh giá lúc build
+  const raw = await searchParams // request-time data first, so the session is not evaluated at build time
   if (!(await getSession())) return <EmptyState title="Sign-in required" />
   const query = productListQuerySchema.parse({ q: raw.q, page: raw.page })
   const result = await productRepository.list({ ...query, pageSize: 10 })
@@ -314,13 +314,13 @@ async function ProductList({ searchParams }: Pick<PageProps<'/products'>, 'searc
 }
 ```
 
-Những điều cần lưu ý:
+Things to keep in mind:
 
-- `PageProps<'/products'>` là type do Next.js tự sinh. Chạy `pnpm typecheck` (có `next typegen`) sau khi thêm route.
-- Phần đọc `searchParams` hoặc gọi dữ liệu phải nằm **trong** `<Suspense>`, vì Cache Components đang bật.
-- Nếu trang không đọc `searchParams`, `cookies()` hay `headers()`, hãy gọi `await connection()` trước khi đọc dữ liệu. Xem `app/(app)/dashboard/page.tsx`.
+- `PageProps<'/products'>` is a type generated by Next.js. Run `pnpm typecheck` (which includes `next typegen`) after adding the route.
+- Code that reads `searchParams` or fetches data must be **inside** `<Suspense>`, because Cache Components is enabled.
+- If the page does not read `searchParams`, `cookies()` or `headers()`, call `await connection()` before reading data. See `app/(app)/dashboard/page.tsx`.
 
-## Bước 7: Menu (`src/config/navigation.tsx`)
+## Step 7: Menu (`src/config/navigation.tsx`)
 
 ```tsx
 import { Package } from 'lucide-react'
@@ -328,25 +328,25 @@ import { Package } from 'lucide-react'
 { href: '/products', label: 'Products', icon: <Package /> },
 ```
 
-## Bước 8: Tests
+## Step 8: Tests
 
-| File                                                         | Test gì                                                                                                                                                                                     |
-| ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `features/products/schemas.test.ts`                          | SKU sai format bị từ chối; price âm bị từ chối                                                                                                                                              |
-| `features/products/services/demo-product-repository.test.ts` | Search, create, remove, NOT_FOUND. Dùng `createDemoProductRepository([...])` để mỗi test có dữ liệu riêng.                                                                                  |
-| `features/products/actions.test.ts`                          | `vi.mock('./services/product-repository')`, `vi.mock('next/cache')` và mock `requireSession` (xem `features/tasks/actions.test.ts`); chưa đăng nhập hoặc input sai thì không gọi repository |
-| `features/products/components/product-form.test.tsx`         | Lỗi validation hiển thị; submit gọi `onSubmit` với số (không phải string)                                                                                                                   |
-| `e2e/products.spec.ts`                                       | Tạo sản phẩm, thấy nó trong bảng, rồi xóa                                                                                                                                                   |
+| File                                                         | What to test                                                                                                                                                                                                   |
+| ------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `features/products/schemas.test.ts`                          | Malformed SKU is rejected; negative price is rejected                                                                                                                                                          |
+| `features/products/services/demo-product-repository.test.ts` | Search, create, remove, NOT_FOUND. Use `createDemoProductRepository([...])` so each test has its own data.                                                                                                     |
+| `features/products/actions.test.ts`                          | `vi.mock('./services/product-repository')`, `vi.mock('next/cache')` and mock `requireSession` (see `features/tasks/actions.test.ts`); when not signed in or the input is invalid, the repository is not called |
+| `features/products/components/product-form.test.tsx`         | Validation errors are shown; submit calls `onSubmit` with numbers (not strings)                                                                                                                                |
+| `e2e/products.spec.ts`                                       | Create a product, see it in the table, then delete it                                                                                                                                                          |
 
-Xem các file mẫu tương ứng trong `features/tasks/`.
+See the corresponding example files in `features/tasks/`.
 
-## Bước 9: Kiểm tra
+## Step 9: Verify
 
 ```bash
 pnpm typecheck && pnpm lint && pnpm test && pnpm build
 pnpm test:e2e
 ```
 
-## Bước 10: Nối backend thật
+## Step 10: Connect a real backend
 
-Đặt `API_MODE=rest` và `API_BASE_URL`, sau đó chỉnh `rest-product-repository.ts` cho khớp với contract của backend. UI không thay đổi gì. Chi tiết: [api-integration.md](api-integration.md).
+Set `API_MODE=rest` and `API_BASE_URL`, then adjust `rest-product-repository.ts` to match the backend's contract. Nothing changes in the UI. Details: [api-integration.md](api-integration.md).
