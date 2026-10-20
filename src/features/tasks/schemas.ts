@@ -50,8 +50,10 @@ export const taskFormSchema = z.object({
     .max(1000, { error: 'Description must be at most 1000 characters' }),
   status: taskStatusSchema,
   priority: taskPrioritySchema,
-  /** '' = no due date (what an empty <input type="date"> submits). */
-  dueDate: z.union([z.literal(''), z.iso.date({ error: 'Enter a valid date' })]),
+  /** '' = no due date (what an empty <input type="date"> submits); stored as null. */
+  dueDate: z
+    .union([z.literal(''), z.iso.date({ error: 'Enter a valid date' })])
+    .transform((value) => value || null),
 })
 
 // Allowlist: ids are interpolated into backend URLs, so '.'/'..' (which URL parsing collapses

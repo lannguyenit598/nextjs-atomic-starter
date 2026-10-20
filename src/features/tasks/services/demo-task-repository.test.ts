@@ -32,7 +32,7 @@ describe('demo task repository', () => {
       description: '',
       status: 'todo',
       priority: 'high',
-      dueDate: '',
+      dueDate: null,
     })
     expect(created.dueDate).toBeNull()
     expect((await repo.list({ page: 1, pageSize: 1 })).items[0].id).toBe(created.id)
@@ -50,7 +50,7 @@ describe('demo task repository', () => {
       description: '',
       status: 'todo',
       priority: 'low',
-      dueDate: '',
+      dueDate: null,
     } as const
     const full = createDemoTaskRepository(seedTasks())
     for (let i = 24; i < 500; i++) await full.create(input)

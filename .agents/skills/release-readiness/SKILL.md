@@ -11,7 +11,7 @@ Commit only when the user asked for a commit. Push, force-push, history rewrites
 
 ## Steps
 
-1. **Git state**: `git status --short --untracked-files=all`, `git diff --stat`, `git remote -v`. List untracked files that must ship (source, tests, stories, `pnpm-lock.yaml`, `.nvmrc`, `public/.gitkeep`, `.github/`, `.agents/`, `.claude/`, docs) and ignored artifacts that must not (`.next`, `node_modules`, `coverage`, `storybook-static`, `test-results`, `.env*` except `.env.example`).
+1. **Git state**: `git status --short --untracked-files=all`, `git diff --stat`, `git remote -v`. List untracked files that must ship (source, tests, stories, `pnpm-lock.yaml`, `.nvmrc`, `public/.gitkeep`, `.github/`, `.agents/`, `.claude/`, docs) and ignored artifacts that must not (`.next`, `node_modules`, `storybook-static`, `test-results`, `.env*` except `.env.example`).
 2. **Secrets**: scan the files to be committed for tokens/keys/private keys and real values in `.env.example` (only placeholders allowed). Confirm `AUTH_ALLOW_ANONYMOUS` default is `false` (`src/lib/env.ts`) and `resolveSession()` default returns `null`.
 3. **Full suite**: `pnpm install --frozen-lockfile`, `pnpm audit --prod`, `pnpm check`, `pnpm build`, `CI=1 pnpm test:e2e`, `pnpm build-storybook`, `pnpm agents:check`.
 4. **Clean checkout**: stage, export the index (`git archive "$(git write-tree)"`) into a temp directory, then install and run the suite there. Proves nothing relies on untracked local files.

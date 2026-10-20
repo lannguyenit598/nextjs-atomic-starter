@@ -26,14 +26,14 @@ export const restTaskRepository: TaskRepository = {
   create: (input) =>
     backendRequest('/tasks', {
       method: 'POST',
-      body: { ...input, dueDate: input.dueDate || null },
+      body: input,
       schema: taskSchema,
     }),
 
   update: (id, input) =>
     backendRequest(`/tasks/${encodeURIComponent(id)}`, {
       method: 'PATCH',
-      body: input.dueDate === undefined ? input : { ...input, dueDate: input.dueDate || null },
+      body: input,
       schema: taskSchema,
     }),
 

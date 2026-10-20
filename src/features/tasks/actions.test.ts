@@ -39,7 +39,7 @@ describe('task Server Actions', () => {
   it('creates a task with parsed data', async () => {
     const result = await createTaskAction({ ...valid, title: '  Ship it ', extra: 'ignored' })
     expect(result).toEqual({ ok: true })
-    expect(repo.create).toHaveBeenCalledWith(valid)
+    expect(repo.create).toHaveBeenCalledWith({ ...valid, dueDate: null })
   })
 
   it('rejects unknown statuses', async () => {

@@ -1,8 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/nextjs-vite'
 
-import { Checkbox } from './checkbox'
 import { Input } from './input'
-import { Label } from './label'
 import { Select } from './select'
 import { Textarea } from './textarea'
 
@@ -31,10 +29,6 @@ export const All: Story = {
           { value: 'closed', label: 'Closed' },
         ]}
       />
-      <div className="flex items-center gap-2">
-        <Checkbox id="terms" />
-        <Label htmlFor="terms">Accept terms</Label>
-      </div>
     </div>
   ),
 }
