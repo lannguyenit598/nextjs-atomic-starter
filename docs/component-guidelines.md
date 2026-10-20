@@ -68,8 +68,8 @@ Prefer composing components together over a single component with dozens of bool
 <EmptyState title="No tasks" action={<Button>Create</Button>} />
 
 // Good: render prop when the child component needs props from the parent
-<FormField label="Title" error={errors.title?.message}>
-  {(field) => <Input {...field} {...register('title')} />}
+<FormField label="Title" error={errors.title?.[0]}>
+  {(field) => <Input name="title" {...field} />}
 </FormField>
 
 // Good: build a component from smaller components

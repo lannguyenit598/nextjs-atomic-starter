@@ -2,7 +2,7 @@
 
 Goal: a `/products` page that shows a product list (with search), and lets you create and delete products. It first runs on demo data, then gets connected to a REST API.
 
-Keep `src/features/tasks/` open next to it for comparison. Every step below follows that exact pattern.
+Keep `src/features/tasks/` open next to it for comparison. Every step below follows that exact pattern. For the process around the code (feature brief, review points, AI agent prompts per phase), see [feature-development-playbook.md](feature-development-playbook.md).
 
 ```text
 src/features/products/
@@ -53,8 +53,26 @@ export const productFormSchema = z.object({
     .string()
     .trim()
     .regex(/^[A-Z0-9-]{3,20}$/, { error: 'SKU: 3–20 chars, A–Z, 0–9, -' }),
-  price: z.number({ error: 'Enter a price' }).nonnegative(),
-  stock: z.number({ error: 'Enter stock' }).int().nonnegative(),
+  // A native form submits strings: require a value, then coerce ('' would coerce to 0).
+  price: z
+    .string()
+    .trim()
+    .min(1, { error: 'Enter a price' })
+    .pipe(
+      z.coerce
+        .number<string>({ error: 'Enter a number' })
+        .nonnegative({ error: 'Must be 0 or more' }),
+    ),
+  stock: z
+    .string()
+    .trim()
+    .min(1, { error: 'Enter stock' })
+    .pipe(
+      z.coerce
+        .number<string>({ error: 'Enter a whole number' })
+        .int()
+        .nonnegative({ error: 'Must be 0 or more' }),
+    ),
   status: z.enum(PRODUCT_STATUSES),
 })
 
@@ -76,7 +94,10 @@ import type { productFormSchema, productPageSchema, productSchema } from './sche
 
 export type Product = z.infer<typeof productSchema>
 export type ProductPage = z.infer<typeof productPageSchema>
-export type ProductFormValues = z.infer<typeof productFormSchema>
+/** What the form submits (strings). */
+export type ProductFormInput = z.input<typeof productFormSchema>
+/** Validated input as the repositories receive it (numbers). */
+export type ProductFormValues = z.output<typeof productFormSchema>
 export type ProductListQuery = { q?: string; page: number; pageSize: number }
 
 export type ProductRepository = {
@@ -256,20 +277,21 @@ export function ProductTable({ products }: { products: Product[] }) {
 
 ### `components/product-form-dialog.tsx` (Client Component)
 
-Copy the structure from `features/tasks/components/task-form.tsx` and `task-form-dialog.tsx`. There are two differences:
+Copy the structure from `features/tasks/components/task-form.tsx` (native `<form>` + `productFormSchema` on submit) and `task-form-dialog.tsx`. There are two differences:
 
-- Numeric fields use `register('price', { valueAsNumber: true })`.
-- `onSubmit={createProductAction}`.
+- Numeric fields are `<input type="number">`; the schema turns their string value into a number (step 1), on the client and again in the Server Action.
+- `onSubmit={(values) => createProductAction(values)}`, with `values` typed as `ProductFormInput`.
 
 ```tsx
-<FormField label="Price" required error={errors.price?.message}>
+<FormField label="Price" required error={errors.price?.[0]}>
   {(field) => (
     <Input
       type="number"
       step="0.01"
       min="0"
+      name="price"
+      defaultValue={defaultValues.price}
       {...field}
-      {...register('price', { valueAsNumber: true })}
     />
   )}
 </FormField>
@@ -335,7 +357,7 @@ import { Package } from 'lucide-react'
 | `features/products/schemas.test.ts`                          | Malformed SKU is rejected; negative price is rejected                                                                                                                                                          |
 | `features/products/services/demo-product-repository.test.ts` | Search, create, remove, NOT_FOUND. Use `createDemoProductRepository([...])` so each test has its own data.                                                                                                     |
 | `features/products/actions.test.ts`                          | `vi.mock('./services/product-repository')`, `vi.mock('next/cache')` and mock `requireSession` (see `features/tasks/actions.test.ts`); when not signed in or the input is invalid, the repository is not called |
-| `features/products/components/product-form.test.tsx`         | Validation errors are shown; submit calls `onSubmit` with numbers (not strings)                                                                                                                                |
+| `features/products/components/product-form.test.tsx`         | Validation errors are shown (empty or negative price); a valid submit calls `onSubmit`                                                                                                                         |
 | `e2e/products.spec.ts`                                       | Create a product, see it in the table, then delete it                                                                                                                                                          |
 
 See the corresponding example files in `features/tasks/`.

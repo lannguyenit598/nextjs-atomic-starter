@@ -153,11 +153,13 @@ Conventions:
 
 ## Starting a new project from the template
 
+Full step-by-step walkthrough (setup, customization, features, backend, deployment, troubleshooting): [docs/usage-guide.md](docs/usage-guide.md). Short version:
+
 1. Copy the repo (GitHub: **Use this template**, or `git clone`, delete `.git` and run `git init`).
 2. Change `name` in `package.json` and `NEXT_PUBLIC_APP_NAME`.
 3. Change colors and fonts in `src/app/globals.css` (edit tokens only, not components).
 4. Edit the menu in `src/config/navigation.tsx`.
-5. Add features by following [docs/create-new-feature.md](docs/create-new-feature.md).
+5. Add features by following [docs/create-new-feature.md](docs/create-new-feature.md) (code) and [docs/feature-development-playbook.md](docs/feature-development-playbook.md) (process and AI agent prompts).
 6. Connect your backend by following [docs/api-integration.md](docs/api-integration.md): set `API_MODE=rest` and `API_BASE_URL`.
 7. When you no longer need the demo: delete `src/features/tasks`, `src/app/(app)/tasks`, the `Tasks` item in navigation, the task section of the dashboard and `e2e/tasks.spec.ts`.
 
