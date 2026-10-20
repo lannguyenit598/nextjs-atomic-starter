@@ -86,6 +86,7 @@ src/
 ├── app/                      # ROUTING ONLY: route, layout, loading/error, metadata
 │   ├── layout.tsx            # Root layout: font, theme script, globals.css
 │   ├── not-found.tsx
+│   ├── global-error.tsx      # Error boundary cuối cùng (lỗi ở root layout)
 │   ├── globals.css           # Design tokens (CSS variables) + Tailwind theme
 │   └── (app)/                # Route group: các màn hình dùng DashboardTemplate
 │       ├── layout.tsx        # Lắp organisms vào DashboardTemplate
@@ -108,14 +109,17 @@ src/
 ├── lib/                      # Hạ tầng dùng chung, không phụ thuộc feature
 │   ├── api/http-client.ts    # Typed fetch: timeout, ApiError, response validation
 │   ├── api/backend.ts        # server-only: gọi backend với base URL + token
+│   ├── auth.ts               # server-only: Session, getSession(), requireSession() (fail-closed)
+│   ├── auth-provider.ts      # resolveSession(): điểm tích hợp nhà cung cấp đăng nhập
 │   ├── env.ts                # server-only env (Zod)
 │   ├── action-result.ts      # Kiểu trả về chuẩn của Server Action
 │   ├── theme.ts              # Light/dark theme
 │   └── utils.ts              # cn(), formatDate()
 ├── config/                   # navigation.tsx, site.ts
 ├── instrumentation.ts        # Chạy khi server start: validate env (fail fast)
+├── instrumentation-client.ts # Chạy trên trình duyệt trước hydration: cấu hình Zod cho CSP
 └── test/                     # Vitest setup
-e2e/                          # Playwright specs
+e2e/                          # Playwright specs; fixtures.ts bắt vi phạm CSP ở mọi test
 docs/                         # Tài liệu kiến trúc và hướng dẫn
 .storybook/                   # Cấu hình Storybook
 .github/workflows/ci.yml      # CI

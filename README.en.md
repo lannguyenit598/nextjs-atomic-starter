@@ -86,6 +86,7 @@ src/
 ├── app/                      # ROUTING ONLY: routes, layouts, loading/error, metadata
 │   ├── layout.tsx            # Root layout: fonts, theme script, globals.css
 │   ├── not-found.tsx
+│   ├── global-error.tsx      # Last-resort error boundary (root layout errors)
 │   ├── globals.css           # Design tokens (CSS variables) + Tailwind theme
 │   └── (app)/                # Route group: screens that use DashboardTemplate
 │       ├── layout.tsx        # Plugs organisms into DashboardTemplate
@@ -108,14 +109,17 @@ src/
 ├── lib/                      # Shared infrastructure, independent of features
 │   ├── api/http-client.ts    # Typed fetch: timeout, ApiError, response validation
 │   ├── api/backend.ts        # server-only: calls the backend with base URL + token
+│   ├── auth.ts               # server-only: Session, getSession(), requireSession() (fail-closed)
+│   ├── auth-provider.ts      # resolveSession(): sign-in provider integration point
 │   ├── env.ts                # server-only env (Zod)
 │   ├── action-result.ts      # Standard Server Action return type
 │   ├── theme.ts              # Light/dark theme
 │   └── utils.ts              # cn(), formatDate()
 ├── config/                   # navigation.tsx, site.ts
 ├── instrumentation.ts        # Runs on server start: validates env (fail fast)
+├── instrumentation-client.ts # Runs in the browser before hydration: Zod config for the CSP
 └── test/                     # Vitest setup
-e2e/                          # Playwright specs
+e2e/                          # Playwright specs; fixtures.ts fails any test with a CSP violation
 docs/                         # Architecture docs and guides
 .storybook/                   # Storybook config
 .github/workflows/ci.yml      # CI
