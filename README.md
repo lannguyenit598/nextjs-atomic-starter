@@ -75,7 +75,8 @@ pnpm dev                       # http://localhost:3000
 | `pnpm test` / `pnpm test:watch` / `pnpm test:coverage` | Vitest                                                        |
 | `pnpm test:e2e`                                        | Playwright (lần đầu: `pnpm exec playwright install chromium`) |
 | `pnpm storybook` / `pnpm build-storybook`              | Storybook tại http://localhost:6006                           |
-| `pnpm check`                                           | typecheck + lint + format:check + test                        |
+| `pnpm check`                                           | typecheck + lint + format:check + test + agents:check         |
+| `pnpm agents:sync` / `pnpm agents:check`               | Sinh/kiểm tra cấu hình AI agent (xem `docs/ai/README.md`)     |
 
 Pre-commit hook (Husky + lint-staged) tự chạy ESLint và Prettier trên các file đã stage.
 
@@ -120,7 +121,10 @@ src/
 ├── instrumentation-client.ts # Chạy trên trình duyệt trước hydration: cấu hình Zod cho CSP
 └── test/                     # Vitest setup
 e2e/                          # Playwright specs; fixtures.ts bắt vi phạm CSP ở mọi test
-docs/                         # Tài liệu kiến trúc và hướng dẫn
+docs/                         # Tài liệu kiến trúc và hướng dẫn; docs/ai/ = rules cho AI agent
+.agents/                      # Skills + scoped rules dùng chung cho AI agent (nguồn)
+.claude/                      # Sinh tự động từ .agents/ cho Claude Code (pnpm agents:sync)
+scripts/                      # sync-agent-config.mjs
 .storybook/                   # Cấu hình Storybook
 .github/workflows/ci.yml      # CI
 ```
@@ -157,6 +161,10 @@ Quy ước:
 5. Thêm feature theo [docs/create-new-feature.md](docs/create-new-feature.md).
 6. Nối backend theo [docs/api-integration.md](docs/api-integration.md): đặt `API_MODE=rest` và `API_BASE_URL`.
 7. Khi không cần demo nữa: xóa `src/features/tasks`, `src/app/(app)/tasks`, item `Tasks` trong navigation, phần task trên dashboard và `e2e/tasks.spec.ts`.
+
+## AI coding agents
+
+Claude Code, Codex, Antigravity và OpenCode dùng chung một bộ rules và skills: `AGENTS.md` (cổng vào), `docs/ai/rules/` (quy tắc), `.agents/skills/` (skill). Cách dùng và bảo trì: [docs/ai/README.md](docs/ai/README.md).
 
 ## Production
 

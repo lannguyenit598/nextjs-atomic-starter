@@ -75,7 +75,8 @@ pnpm dev                       # http://localhost:3000
 | `pnpm test` / `pnpm test:watch` / `pnpm test:coverage` | Vitest                                                           |
 | `pnpm test:e2e`                                        | Playwright (first time: `pnpm exec playwright install chromium`) |
 | `pnpm storybook` / `pnpm build-storybook`              | Storybook at http://localhost:6006                               |
-| `pnpm check`                                           | typecheck + lint + format:check + test                           |
+| `pnpm check`                                           | typecheck + lint + format:check + test + agents:check            |
+| `pnpm agents:sync` / `pnpm agents:check`               | Generate/validate AI agent config (see `docs/ai/README.md`)      |
 
 A pre-commit hook (Husky + lint-staged) runs ESLint and Prettier on staged files.
 
@@ -120,7 +121,10 @@ src/
 ├── instrumentation-client.ts # Runs in the browser before hydration: Zod config for the CSP
 └── test/                     # Vitest setup
 e2e/                          # Playwright specs; fixtures.ts fails any test with a CSP violation
-docs/                         # Architecture docs and guides
+docs/                         # Architecture docs and guides; docs/ai/ = rules for AI agents
+.agents/                      # Shared AI agent skills + scoped rules (source)
+.claude/                      # Generated from .agents/ for Claude Code (pnpm agents:sync)
+scripts/                      # sync-agent-config.mjs
 .storybook/                   # Storybook config
 .github/workflows/ci.yml      # CI
 ```
@@ -157,6 +161,10 @@ Conventions:
 5. Add features by following [docs/create-new-feature.md](docs/create-new-feature.md).
 6. Connect your backend by following [docs/api-integration.md](docs/api-integration.md): set `API_MODE=rest` and `API_BASE_URL`.
 7. When you no longer need the demo: delete `src/features/tasks`, `src/app/(app)/tasks`, the `Tasks` item in navigation, the task section of the dashboard and `e2e/tasks.spec.ts`.
+
+## AI coding agents
+
+Claude Code, Codex, Antigravity and OpenCode share one set of rules and skills: `AGENTS.md` (entry point), `docs/ai/rules/` (rules), `.agents/skills/` (skills). Usage and maintenance (in Vietnamese): [docs/ai/README.md](docs/ai/README.md).
 
 ## Production
 

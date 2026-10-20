@@ -15,10 +15,12 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
-    "check": "pnpm typecheck && pnpm lint && pnpm format:check && pnpm test",
+    "check": "pnpm typecheck && pnpm lint && pnpm format:check && pnpm test && pnpm agents:check",
     "prepare": "husky",
     "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build"
+    "build-storybook": "storybook build",
+    "agents:sync": "node scripts/sync-agent-config.mjs",
+    "agents:check": "node scripts/sync-agent-config.mjs --check"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.9.2",
