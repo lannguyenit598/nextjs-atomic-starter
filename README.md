@@ -1,15 +1,13 @@
 # Atomic Design Next.js Template
 
+**Tiếng Việt** | [English](README.en.md)
+
 Starter template cho các dự án Next.js production: admin dashboard, ứng dụng nội bộ, SaaS, hệ thống quản lý dùng REST API.
 
 Kiến trúc: **Hybrid Atomic Design + Feature-Based**.
 
 - **Atomic Design** tổ chức các UI component dùng chung (design system).
 - **Feature module** tổ chức các chức năng nghiệp vụ.
-
-Template có sẵn demo **Task Management** chạy được ngay mà không cần backend.
-
-> Viết cho backend developer mới làm frontend. Đọc theo thứ tự: README → [docs/architecture.md](docs/architecture.md) → [docs/component-guidelines.md](docs/component-guidelines.md) → [docs/create-new-feature.md](docs/create-new-feature.md) → [docs/api-integration.md](docs/api-integration.md).
 
 ---
 
