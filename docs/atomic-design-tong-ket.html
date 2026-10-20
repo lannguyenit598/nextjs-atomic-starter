@@ -1,0 +1,1292 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Tổng kết Atomic Design</title>
+    <style>
+      :root {
+        --bg: #fbfaf7;
+        --surface: #ffffff;
+        --surface-2: #f3f1ec;
+        --text: #1d1d1b;
+        --muted: #63615b;
+        --border: #e2dfd7;
+        --accent: #2f5bd3;
+        --accent-soft: #e8eefc;
+        --warn: #9a5b00;
+        --warn-soft: #fff4e0;
+        --ok: #1d7a46;
+        --ok-soft: #e5f5ec;
+        --code-bg: #f5f3ee;
+        --radius: 10px;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme='light']) {
+          --bg: #151514;
+          --surface: #1d1d1b;
+          --surface-2: #262623;
+          --text: #ecebe6;
+          --muted: #a3a19a;
+          --border: #34332f;
+          --accent: #8eaaff;
+          --accent-soft: #1f2a47;
+          --warn: #f0b45c;
+          --warn-soft: #3a2c14;
+          --ok: #6fd39b;
+          --ok-soft: #173325;
+          --code-bg: #232320;
+        }
+      }
+      :root[data-theme='dark'] {
+        --bg: #151514;
+        --surface: #1d1d1b;
+        --surface-2: #262623;
+        --text: #ecebe6;
+        --muted: #a3a19a;
+        --border: #34332f;
+        --accent: #8eaaff;
+        --accent-soft: #1f2a47;
+        --warn: #f0b45c;
+        --warn-soft: #3a2c14;
+        --ok: #6fd39b;
+        --ok-soft: #173325;
+        --code-bg: #232320;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font:
+          16px/1.65 system-ui,
+          -apple-system,
+          'Segoe UI',
+          Roboto,
+          sans-serif;
+      }
+      .layout {
+        display: grid;
+        grid-template-columns: 240px minmax(0, 1fr);
+        gap: 48px;
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 40px 24px 80px;
+      }
+      nav.toc {
+        position: sticky;
+        top: 24px;
+        align-self: start;
+        font-size: 14px;
+      }
+      nav.toc p {
+        margin: 0 0 8px;
+        font-weight: 600;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        font-size: 12px;
+      }
+      nav.toc ol {
+        margin: 0;
+        padding-left: 18px;
+      }
+      nav.toc li {
+        margin: 4px 0;
+      }
+      nav.toc a {
+        color: var(--text);
+        text-decoration: none;
+      }
+      nav.toc a:hover {
+        color: var(--accent);
+      }
+
+      main {
+        min-width: 0;
+      }
+      header.hero {
+        margin-bottom: 40px;
+      }
+      header.hero h1 {
+        font-size: 34px;
+        line-height: 1.2;
+        margin: 0 0 12px;
+      }
+      header.hero p {
+        color: var(--muted);
+        margin: 0;
+        max-width: 62ch;
+      }
+
+      section {
+        margin: 0 0 56px;
+        scroll-margin-top: 24px;
+      }
+      h2 {
+        font-size: 24px;
+        margin: 0 0 16px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid var(--border);
+      }
+      h3 {
+        font-size: 18px;
+        margin: 28px 0 10px;
+      }
+      p,
+      li {
+        max-width: 72ch;
+      }
+      a {
+        color: var(--accent);
+      }
+
+      .tag {
+        display: inline-block;
+        font-size: 12px;
+        font-weight: 600;
+        padding: 1px 8px;
+        border-radius: 999px;
+        background: var(--surface-2);
+        border: 1px solid var(--border);
+        white-space: nowrap;
+      }
+      .legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin: 12px 0 0;
+      }
+
+      .callout {
+        border: 1px solid var(--border);
+        border-left: 4px solid var(--accent);
+        background: var(--accent-soft);
+        border-radius: var(--radius);
+        padding: 12px 16px;
+        margin: 16px 0;
+      }
+      .callout.warn {
+        border-left-color: var(--warn);
+        background: var(--warn-soft);
+      }
+      .callout.ok {
+        border-left-color: var(--ok);
+        background: var(--ok-soft);
+      }
+      .callout > :first-child {
+        margin-top: 0;
+      }
+      .callout > :last-child {
+        margin-bottom: 0;
+      }
+
+      .table-wrap {
+        overflow-x: auto;
+        margin: 12px 0 20px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14.5px;
+        background: var(--surface);
+      }
+      th,
+      td {
+        text-align: left;
+        vertical-align: top;
+        padding: 9px 12px;
+        border-bottom: 1px solid var(--border);
+      }
+      th {
+        background: var(--surface-2);
+        font-weight: 600;
+      }
+      tr:last-child td {
+        border-bottom: 0;
+      }
+
+      pre,
+      code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      }
+      code {
+        font-size: 0.9em;
+        background: var(--code-bg);
+        padding: 1px 5px;
+        border-radius: 4px;
+      }
+      pre {
+        background: var(--code-bg);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 14px 16px;
+        overflow-x: auto;
+        font-size: 13.5px;
+        line-height: 1.5;
+        margin: 12px 0 20px;
+      }
+      pre code {
+        background: none;
+        padding: 0;
+        font-size: inherit;
+      }
+
+      .levels {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+        gap: 12px;
+        margin: 16px 0;
+      }
+      .level {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 14px;
+      }
+      .level b {
+        display: block;
+        margin-bottom: 4px;
+      }
+      .level span {
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      ol.quiz {
+        padding-left: 0;
+        list-style: none;
+        counter-reset: q;
+      }
+      ol.quiz > li {
+        counter-increment: q;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 14px 16px;
+        margin: 0 0 12px;
+        max-width: none;
+      }
+      ol.quiz > li::before {
+        content: 'Câu ' counter(q) '. ';
+        font-weight: 700;
+      }
+      details {
+        margin-top: 10px;
+      }
+      summary {
+        cursor: pointer;
+        color: var(--accent);
+        font-weight: 600;
+        font-size: 14px;
+      }
+      details[open] summary {
+        margin-bottom: 6px;
+      }
+      details .hint {
+        color: var(--muted);
+        font-size: 15px;
+      }
+      details .hint ul {
+        margin: 4px 0;
+        padding-left: 20px;
+      }
+
+      @media (max-width: 860px) {
+        .layout {
+          grid-template-columns: 1fr;
+          gap: 24px;
+          padding: 24px 16px 64px;
+        }
+        nav.toc {
+          position: static;
+          background: var(--surface);
+          border: 1px solid var(--border);
+          border-radius: var(--radius);
+          padding: 12px 16px;
+        }
+        header.hero h1 {
+          font-size: 28px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="layout">
+      <nav class="toc" aria-label="Mục lục">
+        <p>Mục lục</p>
+        <ol>
+          <li><a href="#p1">Tư duy Atomic Design</a></li>
+          <li><a href="#p2">5 cấp độ</a></li>
+          <li><a href="#p3">Áp dụng vào Next.js</a></li>
+          <li><a href="#p4">Ứng dụng Task thực tế</a></li>
+          <li><a href="#p5">Vấn đề thực tế</a></li>
+          <li><a href="#fix">Đính chính</a></li>
+          <li><a href="#checklist">Checklist</a></li>
+          <li><a href="#quiz">Câu hỏi ôn tập</a></li>
+        </ol>
+      </nav>
+
+      <main>
+        <header class="hero">
+          <h1>Tổng kết: Atomic Design trong Next.js</h1>
+          <p>
+            Tài liệu tóm tắt dành cho Backend Developer học frontend. Ví dụ thực tế lấy từ repo
+            <code>atomic-design-project-template</code> (Next.js 16.4, React 19, Tailwind,
+            TypeScript).
+          </p>
+          <div class="legend">
+            <span class="tag">[Brad Frost]</span> nguyên lý gốc
+            <span class="tag">[React thực tế]</span> cách cộng đồng áp dụng
+            <span class="tag">[Quy tắc Next.js]</span> framework bắt buộc
+            <span class="tag">[Ý kiến]</span> lựa chọn có tranh luận
+          </div>
+        </header>
+
+        <!-- PHẦN 1 -->
+        <section id="p1">
+          <h2>1. Tư duy Atomic Design</h2>
+
+          <h3>Vì sao ra đời</h3>
+          <p>
+            <span class="tag">[Brad Frost]</span> Năm 2013, responsive web khiến cách làm "thiết kế
+            từng trang" bị vỡ: cùng một nút nhưng mỗi trang một kiểu, sửa header phải sửa N chỗ. Ý
+            tưởng cốt lõi:
+          </p>
+          <div class="callout">
+            <p>
+              <em>"We're not designing pages, we're designing systems of components."</em> (Stephen
+              Hay, được Brad Frost trích dẫn)
+            </p>
+          </div>
+          <p>
+            Ông mượn ẩn dụ hóa học: nguyên tử ghép thành phân tử, phân tử tạo thành sinh vật. UI đi
+            <b>từ nhỏ đến lớn, từ trừu tượng đến cụ thể</b>.
+          </p>
+          <pre><code>Atoms ──► Molecules ──► Organisms ──► Templates ──► Pages</code></pre>
+
+          <h3>Ba điểm hay bị hiểu sai</h3>
+          <ul>
+            <li>
+              Atomic Design là <b>mental model để xây design system</b>, ban đầu không phải cấu trúc
+              thư mục.
+            </li>
+            <li>
+              Atoms gốc gồm cả màu sắc và font chữ. Trong Tailwind, chúng trở thành
+              <b>design tokens</b> (CSS variables), không phải component.
+            </li>
+            <li>
+              Đây <b>không phải quy trình tuyến tính</b>: bạn đi qua lại giữa tổng thể và chi tiết.
+            </li>
+          </ul>
+
+          <h3>Code chưa tổ chức và vấn đề</h3>
+          <div class="table-wrap">
+            <table>
+              <tr>
+                <th>Vấn đề</th>
+                <th>Biểu hiện</th>
+                <th>Giống gì ở backend</th>
+              </tr>
+              <tr>
+                <td>Thiếu nhất quán</td>
+                <td>Nút <code>rounded-md</code> ở chỗ này, <code>rounded-sm</code> ở chỗ khác</td>
+                <td>Mỗi endpoint tự format response</td>
+              </tr>
+              <tr>
+                <td>Lặp code</td>
+                <td>Copy chuỗi class badge sang trang khác</td>
+                <td>Copy logic validate giữa các controller</td>
+              </tr>
+              <tr>
+                <td>Sửa 1 thành sửa N</td>
+                <td>Đổi style nút phải tìm khắp các file</td>
+                <td>Đổi format ngày phải sửa 20 file</td>
+              </tr>
+              <tr>
+                <td>Trộn trách nhiệm</td>
+                <td>Style, state, lọc, xóa trong một file</td>
+                <td>Controller 500 dòng</td>
+              </tr>
+            </table>
+          </div>
+
+          <h3>Sau khi tách: atom không biết domain</h3>
+          <pre><code>// components/atoms/Badge.tsx
+const toneClass = {
+  success: "bg-green-100 text-green-700",
+  warning: "bg-yellow-100 text-yellow-700",
+};
+
+export function Badge({ tone, children }: { tone: keyof typeof toneClass; children: ReactNode }) {
+  return &lt;span className={`${toneClass[tone]} text-xs px-2 rounded-full`}&gt;{children}&lt;/span&gt;;
+}</code></pre>
+          <p>
+            <b>Data đi xuống (props), event đi lên (callback).</b> State chỉ sống ở một nơi, giống
+            single source of truth.
+          </p>
+
+          <h3>Liên hệ backend: giống và khác</h3>
+          <div class="table-wrap">
+            <table>
+              <tr>
+                <th>Khái niệm</th>
+                <th>Giống</th>
+                <th>Khác (đừng đánh đồng)</th>
+              </tr>
+              <tr>
+                <td>Separation of Concerns</td>
+                <td>Mỗi cấp có phạm vi rõ ràng</td>
+                <td>
+                  Atomic chỉ tách <b>cùng một loại</b> (UI) theo kích thước. Nó không tách business
+                  logic khỏi UI.
+                </td>
+              </tr>
+              <tr>
+                <td>Reusability</td>
+                <td>Atom và molecule giống shared library</td>
+                <td>Hai nút trông giống nhau chưa chắc nên là một component</td>
+              </tr>
+              <tr>
+                <td>Composition</td>
+                <td>Ưu tiên composition hơn inheritance</td>
+                <td>React lồng theo cây, có <code>children</code> và slot</td>
+              </tr>
+              <tr>
+                <td>Clean Architecture</td>
+                <td>Phụ thuộc một chiều (atom không import molecule)</td>
+                <td>
+                  "Atom = Entity" là <b>sai</b>: Entity chứa business rule, atom cố tình không biết
+                  domain
+                </td>
+              </tr>
+            </table>
+          </div>
+        </section>
+
+        <!-- PHẦN 2 -->
+        <section id="p2">
+          <h2>2. Năm cấp độ</h2>
+          <div class="levels">
+            <div class="level">
+              <b>Atoms</b
+              ><span>Phần tử nhỏ nhất: Button, Input, Label, Badge. Không biết domain.</span>
+            </div>
+            <div class="level">
+              <b>Molecules</b><span>Vài atom làm <b>một việc</b>: SearchInput, FormField.</span>
+            </div>
+            <div class="level">
+              <b>Organisms</b><span>Một <b>vùng</b> đứng riêng của trang: Header, DataTable.</span>
+            </div>
+            <div class="level">
+              <b>Templates</b><span>Khung bố cục với các slot, chưa có nội dung thật.</span>
+            </div>
+            <div class="level">
+              <b>Pages</b
+              ><span>Template cộng dữ liệu thật. Trong Next.js là <code>page.tsx</code>.</span>
+            </div>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <tr>
+                <th>Cấp</th>
+                <th>Được làm</th>
+                <th>Không được làm</th>
+                <th>Lỗi phân loại hay gặp</th>
+              </tr>
+              <tr>
+                <td>Atom</td>
+                <td>UI state nội bộ, chọn variant</td>
+                <td>Business logic, gọi API, biết router</td>
+                <td>
+                  <code>DeleteTaskButton</code> (tên có domain), prop boolean tràn lan, bọc mọi thẻ
+                  HTML
+                </td>
+              </tr>
+              <tr>
+                <td>Molecule</td>
+                <td>Ghép atoms, nhận dữ liệu qua props</td>
+                <td>Tự fetch, import ngược organism</td>
+                <td>Chỉ bọc một atom; ghép các thứ chỉ vì đứng cạnh nhau</td>
+              </tr>
+              <tr>
+                <td>Organism</td>
+                <td>Xử lý trạng thái rỗng, loading, lỗi</td>
+                <td>Dài 600 dòng, mọi organism đều tự fetch</td>
+                <td>Gọi mọi thứ "to" là organism</td>
+              </tr>
+              <tr>
+                <td>Template</td>
+                <td>Slot (<code>ReactNode</code>), bố cục</td>
+                <td>Fetch, nội dung thật</td>
+                <td>Dùng một lần; lặp lại việc <code>layout.tsx</code> đã làm</td>
+              </tr>
+              <tr>
+                <td>Page</td>
+                <td>Lấy dữ liệu, validate URL, ghép UI</td>
+                <td>Business logic, <code>'use client'</code></td>
+                <td>Chứa toàn bộ markup (quay lại monolith)</td>
+              </tr>
+            </table>
+          </div>
+
+          <h3>Template, <code>layout.tsx</code> và <code>template.tsx</code></h3>
+          <div class="table-wrap">
+            <table>
+              <tr>
+                <th></th>
+                <th>Atomic Template</th>
+                <th>Next <code>layout.tsx</code></th>
+                <th>Next <code>template.tsx</code></th>
+              </tr>
+              <tr>
+                <td>Bản chất</td>
+                <td>Component thiết kế</td>
+                <td>Quy ước routing</td>
+                <td>Quy ước routing</td>
+              </tr>
+              <tr>
+                <td>Khi chuyển trang</td>
+                <td>Render như component thường</td>
+                <td>Giữ nguyên, giữ state</td>
+                <td>Remount, reset state</td>
+              </tr>
+              <tr>
+                <td>Nhận gì</td>
+                <td>Props, slots</td>
+                <td>
+                  <code>children</code>, <code>params</code> (không có <code>searchParams</code>)
+                </td>
+                <td><code>children</code></td>
+              </tr>
+            </table>
+          </div>
+          <p>
+            <span class="tag">[Ý kiến]</span> Chỉ tạo Atomic Template khi có ít nhất 2 trang dùng
+            chung bố cục. Khung chung toàn ứng dụng thì đặt ở <code>layout.tsx</code>.
+          </p>
+
+          <h3>Quy tắc phụ thuộc</h3>
+          <pre><code>app/**/page.tsx, layout.tsx
+        ▼  chỉ import xuống dưới
+    templates ▶ organisms ▶ molecules ▶ atoms
+
+lib/ (types, hạ tầng): cấp nào cũng import được, trừ atoms không import domain type</code></pre>
+        </section>
+
+        <!-- PHẦN 3 -->
+        <section id="p3">
+          <h2>3. Áp dụng vào Next.js</h2>
+
+          <h3>Mỗi thư mục trả lời một câu hỏi</h3>
+          <pre><code>app/          → "Có những URL nào?"            (routing, mỏng như controller)
+components/   → "UI dùng chung trông thế nào?"  (Atomic, không biết domain)
+features/x/   → "Nghiệp vụ X gồm những gì?"     (schema, service, action, UI riêng)
+lib/          → hạ tầng chung</code></pre>
+
+          <h3>Hai cấu trúc</h3>
+          <div class="table-wrap">
+            <table>
+              <tr>
+                <th></th>
+                <th>A. Atomic thuần</th>
+                <th>B. Atomic + Feature</th>
+              </tr>
+              <tr>
+                <td>Ý tưởng</td>
+                <td>Mọi component chia theo cấp</td>
+                <td>
+                  Atomic chỉ cho <code>components/</code>, nghiệp vụ nằm trong
+                  <code>features/</code>
+                </td>
+              </tr>
+              <tr>
+                <td>Ưu điểm</td>
+                <td>Đơn giản, hợp với design system</td>
+                <td>Sửa hoặc xóa một feature chỉ trong một thư mục</td>
+              </tr>
+              <tr>
+                <td>Nhược điểm</td>
+                <td>
+                  Code của một nghiệp vụ rải ở 4 thư mục; <code>organisms/</code> thành bãi rác
+                </td>
+                <td>Phải quyết định shared hay feature; cần luật import</td>
+              </tr>
+              <tr>
+                <td>Phù hợp</td>
+                <td>App nhỏ, thư viện UI</td>
+                <td>App vừa và lớn, nhiều người làm</td>
+              </tr>
+              <tr>
+                <td>Backend tương ứng</td>
+                <td>Package-by-layer</td>
+                <td>Package-by-feature</td>
+              </tr>
+            </table>
+          </div>
+
+          <h3>Shared hay feature?</h3>
+          <pre><code>Component có biết domain không?
+├── Có    → features/&lt;domain&gt;/components/
+└── Không → Đã dùng ở ≥ 2 nơi?
+            ├── Có   → components/&lt;cấp&gt;/
+            └── Chưa → để trong feature trước, chuyển lên khi có lần dùng thứ 2</code></pre>
+
+          <h3>Server Component và Client Component</h3>
+          <div class="table-wrap">
+            <table>
+              <tr>
+                <th></th>
+                <th>Server (mặc định)</th>
+                <th>Client (<code>'use client'</code>)</th>
+              </tr>
+              <tr>
+                <td>Chạy ở</td>
+                <td>Chỉ server</td>
+                <td>Server render HTML, sau đó <b>hydrate</b> trong trình duyệt</td>
+              </tr>
+              <tr>
+                <td><code>async/await</code>, secret</td>
+                <td>Có</td>
+                <td>Không (chỉ biến <code>NEXT_PUBLIC_*</code>)</td>
+              </tr>
+              <tr>
+                <td>State, effect, <code>onClick</code></td>
+                <td>Không</td>
+                <td>Có</td>
+              </tr>
+            </table>
+          </div>
+          <div class="callout">
+            <p>
+              <span class="tag">[Quy tắc Next.js]</span> <code>'use client'</code> là
+              <b>ranh giới</b>: mọi thứ file đó import đều thành client. Atom không có hook thì
+              <b>không cần</b> directive này, nhờ vậy dùng được ở cả hai phía.
+            </p>
+            <p>
+              <b>Cần <code>'use client'</code>:</b> hook có state hoặc effect, event handler là hàm
+              JS, browser API. <b>Không cần:</b> render props, <code>&lt;Link&gt;</code>,
+              <code>&lt;form action&gt;</code>, fetch dữ liệu.
+            </p>
+            <p>
+              Đặt <code>'use client'</code> <b>càng gần lá càng tốt</b>. Server Component có thể
+              được truyền vào Client Component qua <code>children</code>.
+            </p>
+          </div>
+
+          <h3>Lỗi thường gặp</h3>
+          <div class="table-wrap">
+            <table>
+              <tr>
+                <th>Lỗi</th>
+                <th>Nguyên nhân</th>
+              </tr>
+              <tr>
+                <td><code>Event handlers cannot be passed to Client Component props.</code></td>
+                <td>Server Component truyền hàm <code>onClick</code> xuống</td>
+              </tr>
+              <tr>
+                <td><code>Functions cannot be passed directly to Client Components...</code></td>
+                <td>Truyền hàm thường (ví dụ <code>cell</code>) qua ranh giới client</td>
+              </tr>
+              <tr>
+                <td><code>process.env.X</code> là <code>undefined</code> ở trình duyệt</td>
+                <td>
+                  Biến không có tiền tố <code>NEXT_PUBLIC_</code> chỉ tồn tại trên server, đây là cố
+                  ý
+                </td>
+              </tr>
+            </table>
+          </div>
+
+          <h3>Data, state, event: đặt ở đâu</h3>
+          <div class="table-wrap">
+            <table>
+              <tr>
+                <th>Việc</th>
+                <th>Vị trí</th>
+              </tr>
+              <tr>
+                <td>Đọc dữ liệu</td>
+                <td>Service hoặc repository, được gọi từ <code>page.tsx</code> (server)</td>
+              </tr>
+              <tr>
+                <td>Ghi dữ liệu</td>
+                <td>Server Action (<code>'use server'</code>)</td>
+              </tr>
+              <tr>
+                <td>Search, filter, page</td>
+                <td>
+                  <b>URL</b> (<code>searchParams</code>): chia sẻ được, nút Back hoạt động đúng,
+                  server đọc được
+                </td>
+              </tr>
+              <tr>
+                <td>UI state</td>
+                <td><code>useState</code> trong client leaf</td>
+              </tr>
+              <tr>
+                <td>Business rules</td>
+                <td>Backend</td>
+              </tr>
+              <tr>
+                <td>Global state lib</td>
+                <td>Chưa cần, cho đến khi có nhu cầu thật</td>
+              </tr>
+            </table>
+          </div>
+        </section>
+
+        <!-- PHẦN 4 -->
+        <section id="p4">
+          <h2>4. Ứng dụng Task thực tế (repo này)</h2>
+
+          <h3>Component tree</h3>
+          <pre><code>app/(app)/layout.tsx
+└── DashboardTemplate                  Template (slots: sidebar, header, children)
+    ├── AppSidebar / AppHeader         Organisms
+    └── tasks/page.tsx                 Page
+        ├── PageHeader + TaskFormDialog       ← static shell, render ngay
+        └── &lt;Suspense fallback={Skeleton}&gt;
+            └── TaskList (async)              ← đọc URL, Zod, taskRepository.list
+                ├── TaskFilters        client: cập nhật URL, debounce 300ms
+                ├── TaskTable          server → DataTable (organism) + columns
+                │   ├── TaskStatusSelect   client: useOptimistic
+                │   ├── TaskPriorityBadge  → Badge (atom)
+                │   └── TaskFormDialog / DeleteTaskButton   client
+                └── Pagination         molecule</code></pre>
+
+          <h3>Tên đề xuất ban đầu và code thật</h3>
+          <div class="table-wrap">
+            <table>
+              <tr>
+                <th>Đề xuất</th>
+                <th>Trong repo</th>
+                <th>Lý do</th>
+              </tr>
+              <tr>
+                <td><code>TaskItem</code> (molecule)</td>
+                <td>
+                  <code>DataTable</code> + <code>columns</code> trong <code>task-table.tsx</code>
+                </td>
+                <td>
+                  Molecule dùng chung không được biết Task. Bảng là phần chung, nội dung ô là phần
+                  của feature.
+                </td>
+              </tr>
+              <tr>
+                <td><code>TaskList</code>, <code>TaskForm</code> (organism)</td>
+                <td><code>features/tasks/components/</code></td>
+                <td>Biết domain nên nằm trong feature</td>
+              </tr>
+              <tr>
+                <td><code>TaskManagementTemplate</code></td>
+                <td><code>DashboardTemplate</code> dùng chung</td>
+                <td>Mọi trang có cùng khung, template riêng là thừa</td>
+              </tr>
+            </table>
+          </div>
+
+          <h3>Mẫu page: static shell và Suspense</h3>
+          <pre><code>export default function TasksPage({ searchParams }: PageProps&lt;'/tasks'&gt;) {   // không async
+  return (
+    &lt;&gt;
+      &lt;PageHeader title="Tasks" actions={&lt;TaskFormDialog /&gt;} /&gt;
+      &lt;Suspense fallback={&lt;TaskListSkeleton /&gt;}&gt;
+        &lt;TaskList searchParams={searchParams} /&gt;   {/* async: await, validate, fetch */}
+      &lt;/Suspense&gt;
+    &lt;/&gt;
+  )
+}</code></pre>
+
+          <h3>Mẫu Server Action</h3>
+          <pre><code>export async function createTaskAction(input: unknown): Promise&lt;ActionResult&gt; {
+  try {
+    await requireSession(TASK_PERMISSIONS.write)          // 1. kiểm tra quyền
+    const parsed = taskFormSchema.safeParse(input)        // 2. validate lại, không tin client
+    if (!parsed.success) return validationFailure(parsed.error)
+    await taskRepository.create(parsed.data)              // 3. gọi repository
+  } catch (error) {
+    return toActionFailure(error)                         // 4. thông báo an toàn cho người dùng
+  }
+  revalidateTaskPages()                                   // 5. render lại /tasks, /dashboard
+  return { ok: true }
+}</code></pre>
+          <p>
+            Hàm trả về <code>ActionResult</code> thay vì throw, vì ở production lỗi bị throw ra sẽ
+            bị Next.js thay bằng thông báo chung chung.
+          </p>
+
+          <h3>Luồng dữ liệu</h3>
+          <pre><code>ĐỌC  Browser GET /tasks?q=..&amp;status=..
+     → shell gửi ngay → TaskList: await searchParams → Zod → taskRepository.list
+     → demo (bộ nhớ) | rest (backendRequest → GET {API_BASE_URL}/tasks, validate response)
+     → stream TaskFilters + TaskTable + Pagination
+
+GHI  TaskStatusSelect: setOptimisticStatus(next)  → UI đổi ngay
+     → updateTaskStatusAction (POST) → requireSession → Zod → repository.update → PATCH
+     → revalidatePath → ok: dữ liệu thật thay giá trị optimistic | lỗi: tự quay về giá trị cũ</code></pre>
+
+          <h3>Presentational và logic</h3>
+          <div class="table-wrap">
+            <table>
+              <tr>
+                <th>Nhóm</th>
+                <th>Ví dụ</th>
+                <th>Chạy ở</th>
+              </tr>
+              <tr>
+                <td>Presentational, không biết domain</td>
+                <td>Button, Badge, DataTable, Pagination, DashboardTemplate</td>
+                <td>Server (trung lập)</td>
+              </tr>
+              <tr>
+                <td>Presentational, biết domain</td>
+                <td>TaskTable, TaskPriorityBadge</td>
+                <td>Server</td>
+              </tr>
+              <tr>
+                <td>Tương tác</td>
+                <td>TaskFilters, TaskStatusSelect, DeleteTaskButton, TaskForm</td>
+                <td>Client</td>
+              </tr>
+              <tr>
+                <td>Điều phối dữ liệu</td>
+                <td>TaskList trong page.tsx</td>
+                <td>Server</td>
+              </tr>
+              <tr>
+                <td>Logic, không có UI</td>
+                <td>actions.ts, services/*, schemas.ts</td>
+                <td>Server</td>
+              </tr>
+            </table>
+          </div>
+
+          <h3>Tích hợp REST API</h3>
+          <ol>
+            <li>
+              <code>.env.local</code>: <code>API_MODE=rest</code>, <code>API_BASE_URL=...</code>.
+              File <code>lib/env.ts</code> validate khi khởi động và có <code>server-only</code> để
+              chặn lộ secret.
+            </li>
+            <li>
+              Contract nằm ở đầu <code>rest-task-repository.ts</code>. Backend khác contract thì
+              <b>chỉ sửa adapter này</b>.
+            </li>
+            <li>
+              <b>Auth fail-closed:</b> phải cài đặt <code>resolveSession()</code> trong
+              <code>lib/auth-provider.ts</code>. Nếu chưa, mọi trang hiện "Sign-in required".
+            </li>
+            <li>
+              Lỗi HTTP được chuyển thành <code>ApiError</code> có mã: <code>NOT_FOUND</code>,
+              <code>VALIDATION_ERROR</code>, <code>TIMEOUT</code>, <code>NETWORK_ERROR</code>,
+              <code>INVALID_RESPONSE</code>.
+            </li>
+          </ol>
+          <div class="callout ok">
+            <p>
+              Chạy thử: <code>cp .env.example .env.local &amp;&amp; pnpm dev</code> rồi mở
+              <code>/tasks</code>. Xem riêng từng component bằng <code>pnpm storybook</code>.
+            </p>
+          </div>
+        </section>
+
+        <!-- PHẦN 5 -->
+        <section id="p5">
+          <h2>5. Vấn đề thực tế</h2>
+
+          <h3>Molecule hay Organism?</h3>
+          <pre><code>1. Có biết domain không?        → Có: features/. Không cần phân loại (khoảng 80% trường hợp)
+2. Có phải một VÙNG đứng riêng?  → Organism
+3. Làm đúng MỘT việc?            → Molecule
+4. Vẫn phân vân?                → Chọn cấp thấp hơn. Chuyển lên sau rất rẻ.</code></pre>
+          <p>
+            Số lượng atom bên trong <b>không quyết định cấp</b>.
+            <code>ConfirmationDialog</code> chứa cả molecule nhưng vẫn là molecule.
+            <code>DataTable</code> không chứa molecule nào nhưng là organism.
+          </p>
+
+          <h3>Câu trả lời ngắn</h3>
+          <div class="table-wrap">
+            <table>
+              <tr>
+                <th>Câu hỏi</th>
+                <th>Trả lời</th>
+              </tr>
+              <tr>
+                <td>Áp dụng Atomic cho mọi component?</td>
+                <td>Không. Chỉ cho <code>components/</code> dùng chung. Feature để phẳng.</td>
+              </tr>
+              <tr>
+                <td>Phải đủ 5 cấp?</td>
+                <td>
+                  Không. Repo chỉ có 1 template; <code>layout.tsx</code> và
+                  <code>page.tsx</code> gánh phần còn lại.
+                </td>
+              </tr>
+              <tr>
+                <td>Atomic thay thế Feature-based?</td>
+                <td>Không. Hai trục khác nhau (kích thước UI và nghiệp vụ), dùng cùng nhau.</td>
+              </tr>
+              <tr>
+                <td>Composition hay component mới?</td>
+                <td>
+                  Chỉ khác <b>nội dung</b> thì dùng composition (slot, render prop). Khác
+                  <b>cấu trúc hoặc hành vi</b> và lặp ≥ 2 lần thì tạo component.
+                </td>
+              </tr>
+            </table>
+          </div>
+
+          <h3>Dấu hiệu over-engineering</h3>
+          <ul>
+            <li>Thư mục <code>organisms/</code>, <code>templates/</code> rỗng "cho đủ bộ".</li>
+            <li>
+              Bọc nhiều tầng: <code>TaskButton</code> → <code>PrimaryButton</code> →
+              <code>Button</code>.
+            </li>
+            <li><code>&lt;Title&gt;</code> chỉ là <code>&lt;h2 className="..."&gt;</code>.</li>
+            <li>Đưa lên shared trước lần dùng thứ hai, rồi phình ra 12 prop boolean.</li>
+            <li>Sửa chữ trên một nút mà phải mở 5 file. Tranh luận phân loại lâu hơn viết code.</li>
+          </ul>
+
+          <h3>Refactor dự án có sẵn (Strangler Fig)</h3>
+          <ol>
+            <li>Khảo sát UI lặp lại nhiều nhất và lệch style nhiều nhất.</li>
+            <li>
+              Tạo khung thư mục cùng ESLint <code>no-restricted-imports</code>
+              <b>ngay từ đầu</b> (giống ArchUnit).
+            </li>
+            <li>Gom design tokens.</li>
+            <li>Tách atoms, thay dần ở những chỗ đang sửa. Không làm big-bang.</li>
+            <li>Tách molecules khi thấy pattern lặp lại.</li>
+            <li>Chuyển component có domain vào <code>features/</code>.</li>
+            <li>Đẩy <code>'use client'</code> xuống các lá.</li>
+            <li>Code ổn định không ai sửa thì cứ để đó. Giữ E2E test làm lưới an toàn.</li>
+          </ol>
+
+          <h3>Anti-pattern bổ sung</h3>
+          <p>Bảng đầy đủ nằm ở <code>docs/component-guidelines.md</code> mục 6. Thêm vào đó:</p>
+          <ul>
+            <li>Phân loại theo <b>kích thước nhìn thấy</b> thay vì phạm vi trách nhiệm.</li>
+            <li>"Atomic chỉ ở tên thư mục": đổi tên thư mục nhưng không có quy tắc phụ thuộc.</li>
+            <li>
+              Shared component có prop mang tên domain (<code>tasks</code>,
+              <code>onDeleteTask</code>).
+            </li>
+            <li>
+              Template lặp lại <code>layout.tsx</code>; nhầm Atomic Template với file
+              <code>template.tsx</code> của Next.js.
+            </li>
+            <li>
+              Tự viết lại phần tử native (<code>&lt;select&gt;</code>, <code>&lt;dialog&gt;</code>,
+              <code>&lt;input type="date"&gt;</code>).
+            </li>
+          </ul>
+        </section>
+
+        <!-- ĐÍNH CHÍNH -->
+        <section id="fix">
+          <h2>Đính chính cho Next.js 16.4</h2>
+          <div class="callout warn">
+            <ul>
+              <li>
+                <b><code>error.tsx</code></b
+                >: từ Next 16.3 dùng prop <code>retry</code> (lấy lại dữ liệu rồi render lại) thay
+                vì <code>reset</code>.
+              </li>
+              <li>
+                <b><code>cacheComponents: true</code></b
+                >: đọc <code>searchParams</code> ngoài <code>&lt;Suspense&gt;</code> sẽ bị dev
+                overlay cảnh báo <em>blocking-route</em>. Hãy tách component con async và bọc
+                Suspense.
+              </li>
+              <li>
+                <b>Data access</b>: không gọi <code>fetch(process.env...)</code> trực tiếp trong
+                component. Đi qua <code>services/*-repository.ts</code> và
+                <code>backendRequest</code>.
+              </li>
+            </ul>
+          </div>
+        </section>
+
+        <!-- CHECKLIST -->
+        <section id="checklist">
+          <h2>Checklist khi tạo component mới</h2>
+          <ol>
+            <li>
+              Đã có component sẵn chưa? Ghép từ component có sẵn được không? Thẻ HTML native làm
+              được không?
+            </li>
+            <li>
+              Component có biết domain không? → <code>features/</code> hay <code>components/</code>
+            </li>
+            <li>
+              Có cần state, event handler hoặc browser API không? → có cần
+              <code>'use client'</code> không
+            </li>
+            <li>Dữ liệu đến từ đâu? → props, không gọi <code>fetch</code> trong component</li>
+            <li>
+              Chạy <code>pnpm check &amp;&amp; pnpm build</code> để ESLint xác nhận ranh giới
+              import.
+            </li>
+          </ol>
+        </section>
+
+        <!-- QUIZ -->
+        <section id="quiz">
+          <h2>Câu hỏi ôn tập</h2>
+          <p>Thử tự trả lời trước, rồi mới mở gợi ý.</p>
+
+          <h3>Phần 1: Tư duy</h3>
+          <ol class="quiz">
+            <li>
+              Designer yêu cầu: "Mọi nút primary đổi sang màu indigo và <code>rounded-lg</code>."
+              Đếm số chỗ phải sửa <b>trước</b> và <b>sau</b> khi refactor. Nếu có 10 trang thì sao?
+              <details>
+                <summary>Gợi ý</summary>
+                <div class="hint">
+                  Trước: mỗi thẻ <code>&lt;button&gt;</code> có class riêng, số chỗ tăng theo số
+                  trang × số nút. Sau: chỉ sửa trong <code>Button.tsx</code> (bảng variant và class
+                  nền), luôn là 1 file dù có bao nhiêu trang.
+                </div>
+              </details>
+            </li>
+            <li>
+              Nếu <code>Badge</code> nhận <code>task: Task</code> thay vì <code>tone</code> +
+              <code>children</code>, điều gì hỏng khi trang Projects cần badge "Active/Archived"?
+              Lỗi tương tự ở backend là gì?
+              <details>
+                <summary>Gợi ý</summary>
+                <div class="hint">
+                  Badge bị gắn chặt vào type Task, không dùng lại được. Backend: một utility
+                  <code>formatCurrency(order: Order)</code> thay vì
+                  <code>formatCurrency(amount)</code>, nên Invoice không gọi được.
+                </div>
+              </details>
+            </li>
+            <li>
+              Đồng nghiệp ánh xạ:
+              <i>Atom = Entity, Molecule = Value Object, Organism = Service, Page = Controller</i>.
+              Phần nào có lý, phần nào sai?
+              <details>
+                <summary>Gợi ý</summary>
+                <div class="hint">
+                  Có lý: phụ thuộc một chiều, ghép từ nhỏ đến lớn, Page hơi giống controller (điều
+                  phối). Sai: Entity và Value Object chứa quy tắc nghiệp vụ, còn atom cố tình không
+                  biết domain. Cả 5 cấp đều thuộc presentation layer, không phải domain hay service.
+                </div>
+              </details>
+            </li>
+          </ol>
+
+          <h3>Phần 2: Năm cấp độ</h3>
+          <ol class="quiz">
+            <li>
+              Phân loại: <code>Avatar</code>, <code>UserMenu</code> (Avatar + tên + dropdown 3
+              link), <code>Pagination</code>, <code>LoginForm</code>.
+              <details>
+                <summary>Gợi ý</summary>
+                <div class="hint">
+                  <ul>
+                    <li>Avatar: atom.</li>
+                    <li>
+                      UserMenu: molecule nếu chỉ làm một việc (menu người dùng); organism nếu thành
+                      một vùng lớn.
+                    </li>
+                    <li>Pagination: molecule (repo đặt ở <code>molecules/</code>).</li>
+                    <li>
+                      LoginForm: biết nghiệp vụ auth, nên đặt trong <code>features/auth/</code>. Câu
+                      hỏi về cấp gần như không còn quan trọng.
+                    </li>
+                  </ul>
+                </div>
+              </details>
+            </li>
+            <li>
+              <code>ProductCard</code> cần nút "Thêm vào giỏ" gọi <code>POST /cart</code>. Đặt lời
+              gọi API ở đâu? <code>ProductCard</code> nhận thêm gì?
+              <details>
+                <summary>Gợi ý</summary>
+                <div class="hint">
+                  Lời gọi API đặt trong Server Action (<code>features/products/actions.ts</code>),
+                  validate input và kiểm tra quyền. <code>ProductCard</code> chứa
+                  <code>&lt;form action={addToCart}&gt;</code> với hidden <code>productId</code>.
+                  Chỉ khi cần trạng thái "Đang thêm..." mới tách một client leaf dùng
+                  <code>useFormStatus</code>. Nhớ lại <code>onDelete</code> ở Phần 1: data đi xuống,
+                  event đi lên.
+                </div>
+              </details>
+            </li>
+            <li>
+              Vì sao <code>CatalogTemplate</code> nhận <code>title</code> +
+              <code>children</code> thay vì <code>products: Product[]</code>?
+              <details>
+                <summary>Gợi ý</summary>
+                <div class="hint">
+                  Template chỉ biết slot, không biết domain. Nếu nhận <code>products</code>, trang
+                  <code>/orders</code> không dùng lại được và template phải import type Product.
+                </div>
+              </details>
+            </li>
+          </ol>
+
+          <h3>Phần 3: Next.js</h3>
+          <ol class="quiz">
+            <li>
+              Theo cấu trúc B, đặt các component sau ở đâu: <code>DatePicker</code> (dùng ở orders
+              và tasks), <code>OrderStatusBadge</code>, <code>CheckoutForm</code>,
+              <code>ProductFilters</code> (chỉ dùng ở /products)?
+              <details>
+                <summary>Gợi ý</summary>
+                <div class="hint">
+                  DatePicker: trước hết thử <code>&lt;input type="date"&gt;</code>; nếu vẫn cần
+                  component riêng thì đặt ở <code>components/molecules</code>. OrderStatusBadge và
+                  CheckoutForm: <code>features/orders</code>. ProductFilters:
+                  <code>features/products/components</code> (hoặc
+                  <code>app/products/_components</code> nếu gắn chặt với một route).
+                </div>
+              </details>
+            </li>
+            <li>
+              Cái nào cần <code>'use client'</code>: (a) ProductList render mảng; (b) Tabs; (c)
+              SearchField dùng <code>&lt;form action="/products"&gt;</code>; (d) ProductCard có
+              <code>onClick</code> gọi console.log; (e) đồng hồ đếm ngược?
+              <details>
+                <summary>Gợi ý</summary>
+                <div class="hint">
+                  Cần: (b), (d), (e), vì có state, event handler là hàm JS, hoặc timer. Không cần:
+                  (a), (c), vì chỉ render, và form GET là hành vi native của trình duyệt.
+                </div>
+              </details>
+            </li>
+            <li>
+              Đồng nghiệp thêm <code>'use client'</code> vào <code>page.tsx</code> để dùng
+              <code>useState</code> cho ô tìm kiếm. Nêu ít nhất 2 hậu quả và cách sửa.
+              <details>
+                <summary>Gợi ý</summary>
+                <div class="hint">
+                  Hậu quả: page không còn <code>async</code> fetch trên server được; cả cây
+                  component bị đẩy vào bundle client; không đọc được secret env. Cách sửa: đưa
+                  keyword lên URL, tách ô tìm kiếm thành client leaf giống <code>TaskFilters</code>,
+                  page vẫn là server.
+                </div>
+              </details>
+            </li>
+          </ol>
+
+          <h3>Phần 4: Ứng dụng Task</h3>
+          <ol class="quiz">
+            <li>
+              Thêm <b>bộ lọc theo priority</b> trên <code>/tasks</code>. Liệt kê file cần sửa theo
+              thứ tự. Có file nào trong <code>components/</code> phải sửa không?
+              <details>
+                <summary>Gợi ý</summary>
+                <div class="hint">
+                  Thứ tự: <code>schemas.ts</code> (thêm <code>priority</code> vào
+                  <code>taskListQuerySchema</code>; type tự cập nhật theo) →
+                  <code>services/demo-…</code> và <code>rest-…</code> (lọc theo priority) →
+                  <code>page.tsx</code> (đọc <code>raw.priority</code>, cập nhật
+                  <code>hrefForPage</code>) → <code>task-filters.tsx</code> (thêm
+                  <code>Select</code> và URL param). <code>TASK_PRIORITY_OPTIONS</code> đã có sẵn.
+                  Không sửa gì trong <code>components/</code>, vì atom <code>Select</code> đã đủ.
+                </div>
+              </details>
+            </li>
+            <li>
+              Đồng nghiệp muốn thêm <code>'use client'</code> vào <code>DataTable</code> để sắp xếp
+              cột. Điều gì hỏng ngay? Đề xuất cách khác.
+              <details>
+                <summary>Gợi ý</summary>
+                <div class="hint">
+                  Hàm <code>cell</code> từ <code>TaskTable</code> (server) không serialize được qua
+                  ranh giới client, dẫn đến lỗi "Functions cannot be passed directly to Client
+                  Components". Cách khác: sắp xếp qua URL (<code>?sort=title</code>) để server sắp
+                  xếp, hoặc chỉ biến nút ở header cột thành client leaf.
+                </div>
+              </details>
+            </li>
+            <li>
+              <code>createTaskAction</code> nhận <code>input: unknown</code> và validate lại dù
+              <code>TaskForm</code> đã validate. Vì sao không bỏ bớt một lần?
+              <details>
+                <summary>Gợi ý</summary>
+                <div class="hint">
+                  Validate ở client là để cải thiện UX. Validate ở server là để bảo mật, vì Server
+                  Action là POST endpoint công khai, ai cũng gọi được. Backend tương tự: bỏ
+                  <code>@Valid</code> ở controller vì "frontend đã kiểm tra rồi".
+                </div>
+              </details>
+            </li>
+          </ol>
+
+          <h3>Phần 5: Thực tế</h3>
+          <ol class="quiz">
+            <li>
+              <code>components/organisms/task-board.tsx</code>: Kanban 3 cột, kéo thả, gọi
+              <code>updateTaskStatusAction</code>. Chỉ ra ít nhất 2 vấn đề và cách tách.
+              <details>
+                <summary>Gợi ý</summary>
+                <div class="hint">
+                  Vấn đề: shared component biết domain và gọi action (ESLint sẽ báo lỗi import
+                  <code>@/features</code>); kéo thả kéo cả component vào client. Cách tách:
+                  <code>KanbanBoard</code> generic (<code>columns</code>, <code>items</code>,
+                  <code>onMove</code>, <code>renderCard</code>) chỉ đưa lên shared khi có lần dùng
+                  thứ 2; <code>TaskBoard</code> trong <code>features/tasks</code> nối với action và
+                  dùng optimistic update.
+                </div>
+              </details>
+            </li>
+            <li>
+              Dự án cũ có 40 trang, 7 style nút khác nhau, <code>'use client'</code> ở mọi
+              <code>page.tsx</code>. Có 2 sprint. Sprint 1 làm gì và <b>không</b> làm gì?
+              <details>
+                <summary>Gợi ý</summary>
+                <div class="hint">
+                  Làm: E2E cho các luồng chính, ESLint boundary, tokens, atom
+                  <code>Button</code> rồi thay dần ở nơi đang sửa, đẩy
+                  <code>'use client'</code> xuống ở vài trang có nhiều traffic. Không làm: refactor
+                  40 trang cùng lúc, tạo đủ 5 cấp, thêm thư viện state.
+                </div>
+              </details>
+            </li>
+            <li>
+              Atomic và Feature là hai trục trực giao. Trong backend, cặp khái niệm nào có quan hệ
+              tương tự?
+              <details>
+                <summary>Gợi ý</summary>
+                <div class="hint">
+                  Layered architecture (controller/service/repository) và module theo bounded
+                  context; cross-cutting concerns (logging, security) và business modules;
+                  ports/adapters và domain modules.
+                </div>
+              </details>
+            </li>
+          </ol>
+
+          <h3>Bài tập thực hành</h3>
+          <ol>
+            <li>
+              Mở Gmail hoặc Jira, vẽ cây ASCII phân rã một dòng trong danh sách thành atoms và
+              molecules.
+            </li>
+            <li>
+              Tạo feature <code>products</code> theo <code>docs/create-new-feature.md</code>, rồi
+              chạy <code>pnpm check &amp;&amp; pnpm build</code>.
+            </li>
+          </ol>
+        </section>
+      </main>
+    </div>
+  </body>
+</html>
