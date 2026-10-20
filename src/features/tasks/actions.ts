@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache'
 import { toActionFailure, validationFailure, type ActionResult } from '@/lib/action-result'
 import { requireSession } from '@/lib/auth'
 
-import { TASK_PERMISSIONS } from './constants'
+import { TASK_WRITE_PERMISSION } from './constants'
 import { taskFormSchema, taskIdSchema, taskStatusSchema } from './schemas'
 import { taskRepository } from './services/task-repository'
 
@@ -22,7 +22,7 @@ function revalidateTaskPages() {
 
 export async function createTaskAction(input: unknown): Promise<ActionResult> {
   try {
-    await requireSession(TASK_PERMISSIONS.write)
+    await requireSession(TASK_WRITE_PERMISSION)
     const parsed = taskFormSchema.safeParse(input)
     if (!parsed.success) return validationFailure(parsed.error)
     await taskRepository.create(parsed.data)
@@ -35,7 +35,7 @@ export async function createTaskAction(input: unknown): Promise<ActionResult> {
 
 export async function updateTaskAction(id: unknown, input: unknown): Promise<ActionResult> {
   try {
-    await requireSession(TASK_PERMISSIONS.write)
+    await requireSession(TASK_WRITE_PERMISSION)
     const parsedId = taskIdSchema.safeParse(id)
     if (!parsedId.success) return { ok: false, error: 'Invalid task id' }
     const parsed = taskFormSchema.safeParse(input)
@@ -50,7 +50,7 @@ export async function updateTaskAction(id: unknown, input: unknown): Promise<Act
 
 export async function updateTaskStatusAction(id: unknown, status: unknown): Promise<ActionResult> {
   try {
-    await requireSession(TASK_PERMISSIONS.write)
+    await requireSession(TASK_WRITE_PERMISSION)
     const parsedId = taskIdSchema.safeParse(id)
     const parsedStatus = taskStatusSchema.safeParse(status)
     if (!parsedId.success || !parsedStatus.success) {
@@ -66,7 +66,7 @@ export async function updateTaskStatusAction(id: unknown, status: unknown): Prom
 
 export async function deleteTaskAction(id: unknown): Promise<ActionResult> {
   try {
-    await requireSession(TASK_PERMISSIONS.write)
+    await requireSession(TASK_WRITE_PERMISSION)
     const parsedId = taskIdSchema.safeParse(id)
     if (!parsedId.success) return { ok: false, error: 'Invalid task id' }
     await taskRepository.remove(parsedId.data)

@@ -87,7 +87,7 @@ export function TaskFilters({ q = '', status }: { q?: string; status?: TaskStatu
           navigate(query, event.target.value)
         }}
       />
-      {pending && <Spinner size="sm" label="Updating results" />}
+      {pending && <Spinner label="Updating results" />}
     </form>
   )
 }

@@ -10,9 +10,9 @@ const meta = {
   argTypes: {
     variant: {
       control: 'select',
-      options: ['primary', 'secondary', 'outline', 'ghost', 'destructive', 'link'],
+      options: ['primary', 'secondary', 'outline', 'ghost', 'destructive'],
     },
-    size: { control: 'select', options: ['sm', 'md', 'lg', 'icon'] },
+    size: { control: 'select', options: ['sm', 'md', 'icon'] },
   },
 } satisfies Meta<typeof Button>
 
@@ -24,7 +24,7 @@ export const Primary: Story = {}
 export const Variants: Story = {
   render: (args) => (
     <div className="flex flex-wrap gap-2">
-      {(['primary', 'secondary', 'outline', 'ghost', 'destructive', 'link'] as const).map((v) => (
+      {(['primary', 'secondary', 'outline', 'ghost', 'destructive'] as const).map((v) => (
         <Button key={v} {...args} variant={v}>
           {v}
         </Button>

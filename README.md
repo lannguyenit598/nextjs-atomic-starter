@@ -18,7 +18,7 @@ Architecture: **Hybrid Atomic Design + Feature-Based**.
 | Framework | Next.js 16 (App Router, Cache Components), React 19, strict TypeScript                               | Server Components, Server Actions, streaming      |
 | Styling   | Tailwind CSS 4, CSS variables (design tokens), `class-variance-authority`, `clsx` + `tailwind-merge` | Centralized tokens, typed variants                |
 | Icons     | `lucide-react`                                                                                       | Lightweight, tree-shakable                        |
-| Forms     | React Hook Form, Zod 4, `@hookform/resolvers`                                                        | One schema for both client and server validation  |
+| Forms     | Native `<form>` + Zod 4                                                                              | One schema for both client and server validation  |
 | Data      | Native `fetch` + typed client (`src/lib/api`)                                                        | No extra library; works on both server and client |
 | Testing   | Vitest, React Testing Library, Playwright                                                            | Unit/component + E2E                              |
 | Quality   | ESLint (next + boundaries), Prettier, Husky + lint-staged, GitHub Actions                            |                                                   |
@@ -65,18 +65,18 @@ pnpm dev                       # http://localhost:3000
 
 ## Scripts
 
-| Command                                                | What it does                                                     |
-| ------------------------------------------------------ | ---------------------------------------------------------------- |
-| `pnpm dev`                                             | Dev server (Turbopack)                                           |
-| `pnpm build` / `pnpm start`                            | Production build / run the build                                 |
-| `pnpm typecheck`                                       | Generate route types + `tsc --noEmit`                            |
-| `pnpm lint` / `pnpm lint:fix`                          | ESLint (including the layer dependency rules)                    |
-| `pnpm format` / `pnpm format:check`                    | Prettier (sorts Tailwind classes automatically)                  |
-| `pnpm test` / `pnpm test:watch` / `pnpm test:coverage` | Vitest                                                           |
-| `pnpm test:e2e`                                        | Playwright (first time: `pnpm exec playwright install chromium`) |
-| `pnpm storybook` / `pnpm build-storybook`              | Storybook at http://localhost:6006                               |
-| `pnpm check`                                           | typecheck + lint + format:check + test + agents:check            |
-| `pnpm agents:sync` / `pnpm agents:check`               | Generate/validate AI agent config (see `docs/ai/README.md`)      |
+| Command                                   | What it does                                                     |
+| ----------------------------------------- | ---------------------------------------------------------------- |
+| `pnpm dev`                                | Dev server (Turbopack)                                           |
+| `pnpm build` / `pnpm start`               | Production build / run the build                                 |
+| `pnpm typecheck`                          | Generate route types + `tsc --noEmit`                            |
+| `pnpm lint` / `pnpm lint:fix`             | ESLint (including the layer dependency rules)                    |
+| `pnpm format` / `pnpm format:check`       | Prettier (sorts Tailwind classes automatically)                  |
+| `pnpm test` / `pnpm test:watch`           | Vitest                                                           |
+| `pnpm test:e2e`                           | Playwright (first time: `pnpm exec playwright install chromium`) |
+| `pnpm storybook` / `pnpm build-storybook` | Storybook at http://localhost:6006                               |
+| `pnpm check`                              | typecheck + lint + format:check + test + agents:check            |
+| `pnpm agents:sync` / `pnpm agents:check`  | Generate/validate AI agent config (see `docs/ai/README.md`)      |
 
 A pre-commit hook (Husky + lint-staged) runs ESLint and Prettier on staged files.
 
@@ -135,7 +135,6 @@ There is no `src/hooks/`, `src/providers/` or `src/types/` yet because no code n
 
 ```bash
 pnpm test                 # unit + component (jsdom)
-pnpm test:coverage        # with a coverage report in ./coverage
 pnpm exec playwright install chromium   # once
 pnpm test:e2e             # E2E: runs `pnpm dev` locally, `pnpm start` in CI
 ```

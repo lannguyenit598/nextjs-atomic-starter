@@ -16,9 +16,6 @@ export const Alerts: Story = {
   render: () => (
     <div className="flex max-w-md flex-col gap-3">
       <Alert title="Heads up">Informational message.</Alert>
-      <Alert variant="success" title="Saved">
-        Your changes were saved.
-      </Alert>
       <Alert variant="destructive" title="Request failed">
         The server could not be reached.
       </Alert>

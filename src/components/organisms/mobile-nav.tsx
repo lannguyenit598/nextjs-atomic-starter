@@ -9,11 +9,10 @@ import { NavMenu, type NavItem } from '@/components/molecules/nav-menu'
 
 export type MobileNavProps = {
   items: readonly NavItem[]
-  title?: string
 }
 
 /** Menu button + drawer for small screens. Reuses the Dialog primitive for focus management. */
-export function MobileNav({ items, title = 'Navigation' }: MobileNavProps) {
+export function MobileNav({ items }: MobileNavProps) {
   const [open, setOpen] = useState(false)
   return (
     <>
@@ -29,7 +28,7 @@ export function MobileNav({ items, title = 'Navigation' }: MobileNavProps) {
       <Dialog
         open={open}
         onOpenChange={setOpen}
-        title={title}
+        title="Navigation"
         className="mt-0 ml-0 h-dvh max-h-dvh w-72 max-w-[85vw] rounded-none rounded-r-lg"
       >
         <nav aria-label="Main">

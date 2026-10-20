@@ -811,7 +811,7 @@ lib/          → hạ tầng chung</code></pre>
           <h3>Mẫu Server Action</h3>
           <pre><code>export async function createTaskAction(input: unknown): Promise&lt;ActionResult&gt; {
   try {
-    await requireSession(TASK_PERMISSIONS.write)          // 1. kiểm tra quyền
+    await requireSession(TASK_WRITE_PERMISSION)          // 1. kiểm tra quyền
     const parsed = taskFormSchema.safeParse(input)        // 2. validate lại, không tin client
     if (!parsed.success) return validationFailure(parsed.error)
     await taskRepository.create(parsed.data)              // 3. gọi repository

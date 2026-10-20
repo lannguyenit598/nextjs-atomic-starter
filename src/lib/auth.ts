@@ -37,7 +37,7 @@ export async function getSession(): Promise<Session | null> {
   return resolveSession()
 }
 
-export function hasPermission(session: Session, permission: string) {
+function hasPermission(session: Session, permission: string) {
   return session.permissions.includes('*') || session.permissions.includes(permission)
 }
 

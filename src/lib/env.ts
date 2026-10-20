@@ -22,7 +22,7 @@ const serverEnvSchema = z.discriminatedUnion('API_MODE', [
   }),
 ])
 
-export type ServerEnv = z.infer<typeof serverEnvSchema>
+type ServerEnv = z.infer<typeof serverEnvSchema>
 
 function readServerEnv(): ServerEnv {
   // Treat empty strings (`API_TOKEN=`) as unset.

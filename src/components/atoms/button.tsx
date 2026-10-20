@@ -16,12 +16,10 @@ export const buttonVariants = cva(
         outline: 'border border-input bg-background shadow-xs hover:bg-accent',
         ghost: 'hover:bg-accent hover:text-accent-foreground',
         destructive: 'bg-destructive text-destructive-foreground shadow-xs hover:bg-destructive/90',
-        link: 'text-primary underline-offset-4 hover:underline',
       },
       size: {
         sm: 'h-8 px-3',
         md: 'h-9 px-4',
-        lg: 'h-10 px-6',
         icon: 'size-9',
       },
     },
@@ -53,7 +51,7 @@ export function Button({
       aria-busy={loading || undefined}
       {...props}
     >
-      {loading && <Spinner size="sm" />}
+      {loading && <Spinner />}
       {children}
     </button>
   )

@@ -3,7 +3,7 @@ import 'server-only'
 import { ApiError } from '@/lib/api/http-client'
 
 import { TASK_PRIORITIES, TASK_STATUSES } from '../schemas'
-import type { Task, TaskFormValues, TaskRepository } from '../types'
+import type { Task, TaskRepository } from '../types'
 
 /**
  * DEMO PERSISTENCE ONLY. Tasks live in server memory:
@@ -70,11 +70,6 @@ function notFound(id: string): never {
   throw new ApiError(`Task "${id}" was not found`, { status: 404, code: 'NOT_FOUND' })
 }
 
-function toStored(input: Partial<TaskFormValues>): Partial<Task> {
-  const { dueDate, ...rest } = input
-  return dueDate === undefined ? rest : { ...rest, dueDate: dueDate || null }
-}
-
 /** `tasks` is mutated in place; pass a fresh array per test for isolation. */
 export function createDemoTaskRepository(tasks: Task[]): TaskRepository {
   return {
@@ -122,7 +117,6 @@ export function createDemoTaskRepository(tasks: Task[]): TaskRepository {
       const task: Task = {
         id: crypto.randomUUID(),
         ...input,
-        dueDate: input.dueDate || null,
         createdAt: now,
         updatedAt: now,
       }
@@ -136,7 +130,7 @@ export function createDemoTaskRepository(tasks: Task[]): TaskRepository {
       if (index === -1) notFound(id)
       const updated: Task = {
         ...tasks[index],
-        ...toStored(input),
+        ...input,
         updatedAt: new Date().toISOString(),
       }
       tasks[index] = updated

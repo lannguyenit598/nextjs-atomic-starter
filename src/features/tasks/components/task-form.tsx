@@ -1,7 +1,7 @@
 'use client'
 
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useForm } from 'react-hook-form'
+import { useState, type FormEvent } from 'react'
+import { z } from 'zod'
 
 import { Button } from '@/components/atoms/button'
 import { Input } from '@/components/atoms/input'
@@ -13,9 +13,9 @@ import { callAction, type ActionResult } from '@/lib/action-result'
 
 import { TASK_PRIORITY_OPTIONS, TASK_STATUS_OPTIONS } from '../constants'
 import { taskFormSchema } from '../schemas'
-import type { TaskFormValues } from '../types'
+import type { TaskFormInput } from '../types'
 
-const EMPTY_VALUES: TaskFormValues = {
+const EMPTY_VALUES: TaskFormInput = {
   title: '',
   description: '',
   status: 'todo',
@@ -23,11 +23,13 @@ const EMPTY_VALUES: TaskFormValues = {
   dueDate: '',
 }
 
+type FieldErrors = Partial<Record<keyof TaskFormInput, string[]>>
+
 export type TaskFormProps = {
-  defaultValues?: TaskFormValues
+  defaultValues?: TaskFormInput
   submitLabel: string
   /** Usually a Server Action. Field errors returned by the server are shown on the fields. */
-  onSubmit: (values: TaskFormValues) => Promise<ActionResult>
+  onSubmit: (values: TaskFormInput) => Promise<ActionResult>
   onSuccess?: () => void
   onCancel?: () => void
 }
@@ -39,58 +41,83 @@ export function TaskForm({
   onSuccess,
   onCancel,
 }: TaskFormProps) {
-  const {
-    register,
-    handleSubmit,
-    setError,
-    formState: { errors, isSubmitting },
-  } = useForm<TaskFormValues>({ resolver: zodResolver(taskFormSchema), defaultValues })
+  const [errors, setErrors] = useState<FieldErrors>({})
+  const [formError, setFormError] = useState<string>()
+  const [submitting, setSubmitting] = useState(false)
 
-  const submit = handleSubmit(async (values) => {
-    const result = await callAction(() => onSubmit(values))
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    const values = Object.fromEntries(new FormData(event.currentTarget))
+    // Same schema as the Server Action, so most mistakes never reach the server.
+    const parsed = taskFormSchema.safeParse(values)
+    if (!parsed.success) {
+      setErrors(z.flattenError(parsed.error).fieldErrors)
+      setFormError(undefined)
+      return
+    }
+    setSubmitting(true)
+    // Raw values, not parsed.data: the Server Action parses (and transforms) them itself.
+    const result = await callAction(() => onSubmit(values as TaskFormInput))
+    setSubmitting(false)
     if (result.ok) {
       onSuccess?.()
       return
     }
-    for (const [field, messages] of Object.entries(result.fieldErrors ?? {})) {
-      if (messages?.[0]) setError(field as keyof TaskFormValues, { message: messages[0] })
-    }
-    setError('root', { message: result.error })
-  })
+    setErrors(result.fieldErrors ?? {})
+    setFormError(result.error)
+  }
 
   return (
     <form onSubmit={submit} noValidate className="flex flex-col gap-4">
-      {errors.root?.message && <Alert variant="destructive">{errors.root.message}</Alert>}
+      {formError && <Alert variant="destructive">{formError}</Alert>}
 
-      <FormField label="Title" required error={errors.title?.message}>
-        {(field) => <Input data-autofocus {...field} {...register('title')} />}
+      <FormField label="Title" required error={errors.title?.[0]}>
+        {(field) => (
+          <Input data-autofocus name="title" defaultValue={defaultValues.title} {...field} />
+        )}
       </FormField>
 
-      <FormField label="Description" error={errors.description?.message} hint="Optional">
-        {(field) => <Textarea {...field} {...register('description')} />}
+      <FormField label="Description" error={errors.description?.[0]} hint="Optional">
+        {(field) => (
+          <Textarea name="description" defaultValue={defaultValues.description} {...field} />
+        )}
       </FormField>
 
       <div className="grid gap-4 sm:grid-cols-3">
-        <FormField label="Status" error={errors.status?.message}>
-          {(field) => <Select options={TASK_STATUS_OPTIONS} {...field} {...register('status')} />}
-        </FormField>
-        <FormField label="Priority" error={errors.priority?.message}>
+        <FormField label="Status" error={errors.status?.[0]}>
           {(field) => (
-            <Select options={TASK_PRIORITY_OPTIONS} {...field} {...register('priority')} />
+            <Select
+              name="status"
+              options={TASK_STATUS_OPTIONS}
+              defaultValue={defaultValues.status}
+              {...field}
+            />
           )}
         </FormField>
-        <FormField label="Due date" error={errors.dueDate?.message}>
-          {(field) => <Input type="date" {...field} {...register('dueDate')} />}
+        <FormField label="Priority" error={errors.priority?.[0]}>
+          {(field) => (
+            <Select
+              name="priority"
+              options={TASK_PRIORITY_OPTIONS}
+              defaultValue={defaultValues.priority}
+              {...field}
+            />
+          )}
+        </FormField>
+        <FormField label="Due date" error={errors.dueDate?.[0]}>
+          {(field) => (
+            <Input type="date" name="dueDate" defaultValue={defaultValues.dueDate} {...field} />
+          )}
         </FormField>
       </div>
 
       <div className="flex justify-end gap-2">
         {onCancel && (
-          <Button variant="outline" disabled={isSubmitting} onClick={onCancel}>
+          <Button variant="outline" disabled={submitting} onClick={onCancel}>
             Cancel
           </Button>
         )}
-        <Button type="submit" loading={isSubmitting}>
+        <Button type="submit" loading={submitting}>
           {submitLabel}
         </Button>
       </div>

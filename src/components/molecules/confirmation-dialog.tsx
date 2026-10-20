@@ -11,7 +11,6 @@ export type ConfirmationDialogProps = {
   title: string
   description?: string
   confirmLabel?: string
-  cancelLabel?: string
   /** Use for irreversible actions such as delete. */
   destructive?: boolean
   /** Disables the buttons and shows a spinner on confirm. */
@@ -27,7 +26,6 @@ export function ConfirmationDialog({
   title,
   description,
   confirmLabel = 'Confirm',
-  cancelLabel = 'Cancel',
   destructive = false,
   pending = false,
   error,
@@ -44,7 +42,7 @@ export function ConfirmationDialog({
       {error && <Alert variant="destructive">{error}</Alert>}
       <div className="flex justify-end gap-2">
         <Button variant="outline" disabled={pending} onClick={() => onOpenChange(false)}>
-          {cancelLabel}
+          Cancel
         </Button>
         <Button
           variant={destructive ? 'destructive' : 'primary'}

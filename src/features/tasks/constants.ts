@@ -4,7 +4,7 @@ import { TASK_PRIORITIES, TASK_STATUSES } from './schemas'
 import type { TaskPriority, TaskStatus } from './types'
 
 /** Permission strings checked by Server Actions (see Session.permissions in src/lib/auth.ts). */
-export const TASK_PERMISSIONS = { write: 'tasks:write' } as const
+export const TASK_WRITE_PERMISSION = 'tasks:write'
 
 export const TASK_STATUS_LABELS: Record<TaskStatus, string> = {
   todo: 'To do',

@@ -26,7 +26,7 @@ export class ApiError extends Error {
   }
 }
 
-export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
+type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
 
 export type QueryParams = Record<string, string | number | boolean | null | undefined>
 

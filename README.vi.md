@@ -20,7 +20,7 @@ Kiến trúc: **Hybrid Atomic Design + Feature-Based**.
 | Framework | Next.js 16 (App Router, Cache Components), React 19, TypeScript strict                               | Server Components, Server Actions, streaming       |
 | Styling   | Tailwind CSS 4, CSS variables (design tokens), `class-variance-authority`, `clsx` + `tailwind-merge` | Token tập trung, variant có type                   |
 | Icons     | `lucide-react`                                                                                       | Nhẹ, tree-shakable                                 |
-| Form      | React Hook Form, Zod 4, `@hookform/resolvers`                                                        | Một schema dùng cho cả client và server validation |
+| Form      | Native `<form>` + Zod 4                                                                              | Một schema dùng cho cả client và server validation |
 | Data      | Native `fetch` + typed client (`src/lib/api`)                                                        | Không cần thư viện, chạy được ở server và client   |
 | Test      | Vitest, React Testing Library, Playwright                                                            | Unit/component + E2E                               |
 | Quality   | ESLint (next + boundaries), Prettier, Husky + lint-staged, GitHub Actions                            |                                                    |
@@ -67,18 +67,18 @@ pnpm dev                       # http://localhost:3000
 
 ## Scripts
 
-| Lệnh                                                   | Việc                                                          |
-| ------------------------------------------------------ | ------------------------------------------------------------- |
-| `pnpm dev`                                             | Dev server (Turbopack)                                        |
-| `pnpm build` / `pnpm start`                            | Build production / chạy bản build                             |
-| `pnpm typecheck`                                       | Sinh route types + `tsc --noEmit`                             |
-| `pnpm lint` / `pnpm lint:fix`                          | ESLint (bao gồm luật phụ thuộc giữa các layer)                |
-| `pnpm format` / `pnpm format:check`                    | Prettier (tự sắp xếp class Tailwind)                          |
-| `pnpm test` / `pnpm test:watch` / `pnpm test:coverage` | Vitest                                                        |
-| `pnpm test:e2e`                                        | Playwright (lần đầu: `pnpm exec playwright install chromium`) |
-| `pnpm storybook` / `pnpm build-storybook`              | Storybook tại http://localhost:6006                           |
-| `pnpm check`                                           | typecheck + lint + format:check + test + agents:check         |
-| `pnpm agents:sync` / `pnpm agents:check`               | Sinh/kiểm tra cấu hình AI agent (xem `docs/ai/README.md`)     |
+| Lệnh                                      | Việc                                                          |
+| ----------------------------------------- | ------------------------------------------------------------- |
+| `pnpm dev`                                | Dev server (Turbopack)                                        |
+| `pnpm build` / `pnpm start`               | Build production / chạy bản build                             |
+| `pnpm typecheck`                          | Sinh route types + `tsc --noEmit`                             |
+| `pnpm lint` / `pnpm lint:fix`             | ESLint (bao gồm luật phụ thuộc giữa các layer)                |
+| `pnpm format` / `pnpm format:check`       | Prettier (tự sắp xếp class Tailwind)                          |
+| `pnpm test` / `pnpm test:watch`           | Vitest                                                        |
+| `pnpm test:e2e`                           | Playwright (lần đầu: `pnpm exec playwright install chromium`) |
+| `pnpm storybook` / `pnpm build-storybook` | Storybook tại http://localhost:6006                           |
+| `pnpm check`                              | typecheck + lint + format:check + test + agents:check         |
+| `pnpm agents:sync` / `pnpm agents:check`  | Sinh/kiểm tra cấu hình AI agent (xem `docs/ai/README.md`)     |
 
 Pre-commit hook (Husky + lint-staged) tự chạy ESLint và Prettier trên các file đã stage.
 
@@ -137,7 +137,6 @@ Chưa có `src/hooks/`, `src/providers/`, `src/types/` vì chưa có code nào c
 
 ```bash
 pnpm test                 # unit + component (jsdom)
-pnpm test:coverage        # kèm coverage report trong ./coverage
 pnpm exec playwright install chromium   # một lần
 pnpm test:e2e             # E2E: local chạy `pnpm dev`, CI chạy `pnpm start`
 ```
