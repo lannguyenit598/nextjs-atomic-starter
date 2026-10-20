@@ -22,14 +22,12 @@
     "agents:check": "node scripts/sync-agent-config.mjs --check"
   },
   "dependencies": {
-    "@hookform/resolvers": "^5.9.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^1.59.0",
     "next": "16.4.2",
     "react": "19.3.1",
     "react-dom": "19.3.1",
-    "react-hook-form": "^7.90.0",
     "tailwind-merge": "^3.7.0",
     "zod": "^4.6.7"
   },

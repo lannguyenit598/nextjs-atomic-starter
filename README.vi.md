@@ -155,11 +155,13 @@ Quy ước:
 
 ## Tạo project mới từ template
 
+Hướng dẫn chi tiết từng bước (cài đặt, tùy biến, thêm feature, nối backend, deploy, xử lý sự cố): [docs/usage-guide.md](docs/usage-guide.md) (tiếng Anh). Tóm tắt:
+
 1. Copy repo (GitHub: **Use this template**, hoặc `git clone` rồi xóa `.git` và chạy `git init`).
 2. Đổi `name` trong `package.json` và `NEXT_PUBLIC_APP_NAME`.
 3. Đổi màu và font trong `src/app/globals.css` (chỉ sửa token, không sửa component).
 4. Sửa menu trong `src/config/navigation.tsx`.
-5. Thêm feature theo [docs/create-new-feature.md](docs/create-new-feature.md).
+5. Thêm feature theo [docs/create-new-feature.md](docs/create-new-feature.md) (code) và [docs/feature-development-playbook.md](docs/feature-development-playbook.md) (quy trình và prompt cho AI agent, tiếng Anh).
 6. Nối backend theo [docs/api-integration.md](docs/api-integration.md): đặt `API_MODE=rest` và `API_BASE_URL`.
 7. Khi không cần demo nữa: xóa `src/features/tasks`, `src/app/(app)/tasks`, item `Tasks` trong navigation, phần task trên dashboard và `e2e/tasks.spec.ts`.
 
