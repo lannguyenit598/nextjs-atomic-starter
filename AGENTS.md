@@ -54,3 +54,7 @@ Atomic Design is a composition model, not a mandatory five-layer hierarchy; an A
 ## Verification
 
 `pnpm check` (typecheck, lint, format, unit tests, agent config) is the minimum for any code change. Add `pnpm build`, `pnpm test:e2e`, `pnpm build-storybook` as the testing rules require. After editing `.agents/` run `pnpm agents:sync`.
+
+- `pnpm dev` needs no backend: `API_MODE` defaults to `demo` (in-memory data). Copy `.env.example` to `.env.local` only for REST mode.
+- One test file: `pnpm test <path>`, e.g. `pnpm test src/features/tasks/actions.test.ts`.
+- `agents:check` fails on any backticked repo path (`src/`, `docs/`, `.agents/`) or relative link in `AGENTS.md`, `CLAUDE.md`, `docs/ai/` or `.agents/` that does not exist. Keep each always-on file under 24 KB.
