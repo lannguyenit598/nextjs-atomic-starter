@@ -109,7 +109,7 @@ for (const dir of fs.readdirSync(skillsDir, { withFileTypes: true })) {
       '',
       generatedNote(where),
       '',
-      `Claude Code entry point for a skill shared by every agent in this repository. Read \`${where}\` (path from the repository root) and follow it exactly; resolve the paths it mentions from the repository root.`,
+      `Claude Code entry point for a skill shared by every agent in this repository. Read \`${where}\` (path from the repository root) and follow it exactly; resolve the paths it mentions from the repository root, except files inside the skill's own folder (\`${path.dirname(where)}/\`).`,
       '',
     ].join('\n'),
   )

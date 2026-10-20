@@ -43,3 +43,6 @@ next-env.d.ts
 /test-results
 /storybook-static
 *storybook.log
+
+# python (vendored ui-ux-pro-max skill scripts)
+__pycache__/
