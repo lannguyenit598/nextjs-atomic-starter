@@ -10,7 +10,8 @@ import { resolveSession } from './auth-provider'
 export type Session = {
   userId: string
   /**
-   * Coarse permissions checked by Server Actions, e.g. 'orders:write'. '*' grants everything.
+   * Coarse permissions, e.g. 'orders:read' (pages, REST reads) and 'orders:write' (Server Actions).
+   * Write does not imply read. '*' grants everything.
    * Fine-grained rules (ownership, tenants) belong to the backend, which receives `accessToken`.
    */
   permissions: readonly string[]
@@ -34,8 +35,9 @@ const ANONYMOUS_SESSION: Session = { userId: 'anonymous', permissions: ['*'] }
 
 /**
  * The current caller, or null. Reads request data (cookies), so call it inside <Suspense>.
- * Memoized per request: a page check plus every backendRequest() would otherwise each run the
- * identity provider (often a token verification or a "/me" call).
+ * Memoized per server render: a page check plus every backendRequest() would otherwise each run
+ * the identity provider (often a token verification or a "/me" call). Outside a render (e.g. in a
+ * Server Action) React may not memoize; that is still correct, just not deduplicated.
  */
 export const getSession = cache(async (): Promise<Session | null> => {
   if (serverEnv.API_MODE === 'demo') return DEMO_SESSION

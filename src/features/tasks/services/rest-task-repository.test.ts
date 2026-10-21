@@ -67,7 +67,11 @@ describe('restTaskRepository', () => {
     const input = { title: 'Ship it', description: '', status: 'todo', priority: 'low' } as const
     await repo.create({ ...input, dueDate: null })
     await repo.update('task-1', { status: 'done' })
-    expect(call(0)).toMatchObject({ url: 'https://api.test/v1/tasks', method: 'POST' })
+    expect(call(0)).toMatchObject({
+      url: 'https://api.test/v1/tasks',
+      method: 'POST',
+      body: JSON.stringify({ ...input, dueDate: null }),
+    })
     expect(call(1)).toMatchObject({
       url: 'https://api.test/v1/tasks/task-1',
       method: 'PATCH',
@@ -75,8 +79,16 @@ describe('restTaskRepository', () => {
     })
   })
 
+  it('reads stats from /tasks/stats', async () => {
+    const stats = { total: 3, todo: 1, in_progress: 1, done: 1 }
+    const { repo, call } = await setup(reader, () => Response.json(stats))
+    await expect(repo.stats()).resolves.toEqual(stats)
+    expect(call()).toMatchObject({ url: 'https://api.test/v1/tasks/stats', method: 'GET' })
+  })
+
   it('accepts an empty 204 response on delete', async () => {
-    const { repo, call } = await setup(reader, () => new Response(null, { status: 204 }))
+    const writer: Session = { ...reader, permissions: ['tasks:write'] }
+    const { repo, call } = await setup(writer, () => new Response(null, { status: 204 }))
     await expect(repo.remove('task-1')).resolves.toBeUndefined()
     expect(call()).toMatchObject({ url: 'https://api.test/v1/tasks/task-1', method: 'DELETE' })
   })

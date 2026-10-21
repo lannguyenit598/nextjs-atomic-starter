@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
 import { Dialog } from './dialog'
@@ -27,5 +27,14 @@ describe('Dialog', () => {
     fireEvent.pointerDown(input)
     fireEvent.click(dialog)
     expect(onOpenChange).not.toHaveBeenCalled()
+  })
+
+  // Chromium makes a repeated Escape non-cancelable and closes the <dialog> itself.
+  it('reopens after a browser-forced close when the caller keeps it open', () => {
+    const { onOpenChange, dialog, input } = setup()
+    act(() => (dialog as HTMLDialogElement).close())
+    expect(onOpenChange).toHaveBeenCalledWith(false)
+    expect(dialog).toHaveAttribute('open')
+    expect(input).toBeInTheDocument()
   })
 })

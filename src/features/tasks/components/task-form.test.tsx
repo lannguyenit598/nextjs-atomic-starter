@@ -18,6 +18,15 @@ describe('TaskForm', () => {
     expect(onSubmit).not.toHaveBeenCalled()
   })
 
+  it('re-announces the same error on a repeated failed submit', async () => {
+    render(<TaskForm submitLabel="Create task" onSubmit={vi.fn()} />)
+    await userEvent.click(screen.getByRole('button', { name: 'Create task' }))
+    const first = screen.getByRole('alert')
+    await userEvent.click(screen.getByRole('button', { name: 'Create task' }))
+    // A fresh alert node is announced again; an unchanged one is not.
+    expect(screen.getByRole('alert')).not.toBe(first)
+  })
+
   it('submits typed values and reports success', async () => {
     const onSubmit = vi.fn().mockResolvedValue({ ok: true })
     const onSuccess = vi.fn()

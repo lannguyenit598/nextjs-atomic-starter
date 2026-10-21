@@ -44,9 +44,12 @@ export function TaskForm({
   const [errors, setErrors] = useState<FieldErrors>({})
   const [formError, setFormError] = useState<string>()
   const [submitting, setSubmitting] = useState(false)
+  // Keys the alert so a repeated, identical error remounts it and is announced again.
+  const [attempt, setAttempt] = useState(0)
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    setAttempt((count) => count + 1)
     const values = Object.fromEntries(new FormData(event.currentTarget))
     // Same schema as the Server Action, so most mistakes never reach the server.
     const parsed = taskFormSchema.safeParse(values)
@@ -70,7 +73,11 @@ export function TaskForm({
 
   return (
     <form onSubmit={submit} noValidate className="flex flex-col gap-4">
-      {formError && <Alert variant="destructive">{formError}</Alert>}
+      {formError && (
+        <Alert key={attempt} variant="destructive">
+          {formError}
+        </Alert>
+      )}
 
       <FormField label="Title" required error={errors.title?.[0]}>
         {(field) => (
