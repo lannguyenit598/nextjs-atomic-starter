@@ -11,9 +11,10 @@ import { Pagination } from '@/components/molecules/pagination'
 import { TaskFilters } from '@/features/tasks/components/task-filters'
 import { TaskFormDialog } from '@/features/tasks/components/task-form-dialog'
 import { TaskTable } from '@/features/tasks/components/task-table'
+import { TASK_READ_PERMISSION } from '@/features/tasks/constants'
 import { TASK_PAGE_SIZE, taskListQuerySchema } from '@/features/tasks/schemas'
 import { taskRepository } from '@/features/tasks/services/task-repository'
-import { getSession } from '@/lib/auth'
+import { getSession, hasPermission } from '@/lib/auth'
 
 export const metadata: Metadata = { title: 'Tasks' }
 
@@ -39,13 +40,23 @@ export default function TasksPage({ searchParams }: PageProps<'/tasks'>) {
 async function TaskList({ searchParams }: Pick<PageProps<'/tasks'>, 'searchParams'>) {
   // Request-time data first, so the session check below is never evaluated at build time.
   const raw = await searchParams
-  // Reads are checked here for a clear message; backendRequest() enforces it again (fail-closed).
-  if (!(await getSession())) {
+  // Reads are checked here for a clear message; the REST adapter enforces it again (fail-closed).
+  const session = await getSession()
+  if (!session) {
     return (
       <EmptyState
         icon={<LockKeyhole />}
         title="Sign-in required"
         description="You need to be signed in to see this page."
+      />
+    )
+  }
+  if (!hasPermission(session, TASK_READ_PERMISSION)) {
+    return (
+      <EmptyState
+        icon={<LockKeyhole />}
+        title="Permission required"
+        description="You don't have permission to view tasks."
       />
     )
   }

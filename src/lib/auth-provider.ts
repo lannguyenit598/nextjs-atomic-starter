@@ -14,6 +14,9 @@ let warned = false
  *  - OIDC (Keycloak, Entra ID, Auth0...): read the session of your OIDC library.
  *  - Session cookie owned by the backend: call its "/me" endpoint with the cookie.
  *
+ * `permissions` are the strings features check, e.g. 'tasks:read' (pages, REST reads) and
+ * 'tasks:write' (Server Actions); write does not imply read. '*' grants everything.
+ *
  * Return `accessToken` whenever you can. Without it, backendRequest() falls back to the shared
  * API_TOKEN, so the backend sees every signed-in user as the same service account and cannot
  * enforce per-user rules (ownership, tenants). That is only acceptable for team-wide shared data.

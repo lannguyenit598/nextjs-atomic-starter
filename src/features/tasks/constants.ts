@@ -3,7 +3,11 @@ import type { BadgeVariant } from '@/components/atoms/badge'
 import { TASK_PRIORITIES, TASK_STATUSES } from './schemas'
 import type { TaskPriority, TaskStatus } from './types'
 
-/** Permission strings checked by Server Actions (see Session.permissions in src/lib/auth.ts). */
+/**
+ * Permission strings (see Session.permissions in src/lib/auth.ts). Write does not imply read.
+ * Read: checked by the task pages and the REST adapter. Write: checked by the Server Actions.
+ */
+export const TASK_READ_PERMISSION = 'tasks:read'
 export const TASK_WRITE_PERMISSION = 'tasks:write'
 
 export const TASK_STATUS_LABELS: Record<TaskStatus, string> = {

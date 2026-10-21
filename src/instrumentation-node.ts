@@ -2,6 +2,13 @@
 export async function validateEnvOrExit() {
   try {
     const { serverEnv } = await import('@/lib/env')
+    // A warning, not an exit: CI's E2E run serves the production build in demo mode on purpose.
+    if (serverEnv.API_MODE === 'demo' && process.env.NODE_ENV === 'production') {
+      console.warn(
+        '[env] API_MODE=demo in a production build: data is in-memory and every visitor can ' +
+          'change it. Set API_MODE=rest for a real deployment.',
+      )
+    }
     if (serverEnv.API_MODE === 'rest' && serverEnv.AUTH_ALLOW_ANONYMOUS) {
       console.warn(
         '[auth] AUTH_ALLOW_ANONYMOUS=true: every visitor can read and change backend data using ' +

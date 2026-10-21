@@ -38,6 +38,10 @@ describe('taskListQuerySchema', () => {
       page: 2,
     })
   })
+
+  it('truncates an over-long search instead of dropping it', () => {
+    expect(taskListQuerySchema.parse({ q: 'x'.repeat(150) }).q).toBe('x'.repeat(100))
+  })
 })
 
 describe('taskIdSchema', () => {

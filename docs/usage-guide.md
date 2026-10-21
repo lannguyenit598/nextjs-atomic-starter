@@ -156,7 +156,7 @@ Follow [create-new-feature.md](create-new-feature.md), which builds a Product fe
 ```text
 src/features/<f>/schemas.ts                    Zod schemas: entity, form input, list query, id
 src/features/<f>/types.ts                      inferred types + <F>Repository contract
-src/features/<f>/constants.ts                  labels, badge mapping, '<f>:write' permission
+src/features/<f>/constants.ts                  labels, badge mapping, '<f>:read' / '<f>:write' permissions
 src/features/<f>/services/demo-<f>-repository.ts
 src/features/<f>/services/rest-<f>-repository.ts
 src/features/<f>/services/<f>-repository.ts    picks demo or rest from API_MODE
@@ -180,7 +180,7 @@ Agent skill: `nextjs-feature-development`.
 
 ### Add a permission
 
-Permissions are plain strings (`'orders:write'`) declared in the feature's `constants.ts` and checked with `requireSession(permission)`. `'*'` grants everything. Your backend decides which permissions a user has; `resolveSession()` returns them (step 8).
+Permissions are plain strings (`'orders:read'`, `'orders:write'`) declared in the feature's `constants.ts`. Actions and the REST adapter check them with `requireSession(permission)`; pages use `hasPermission(session, permission)` to show "Permission required". Write does not imply read. `'*'` grants everything. Your backend decides which permissions a user has; `resolveSession()` returns them (step 8).
 
 ### Allow a third-party origin (analytics, CDN, browser-side API)
 

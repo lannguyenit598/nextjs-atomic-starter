@@ -235,6 +235,7 @@ flowchart LR
 | Read the user from a cookie or IdP   | `src/lib/auth-provider.ts` → `resolveSession()`                                      |
 | Send the user's token to the backend | Return `accessToken` in `Session`; `backendRequest()` sends it automatically         |
 | Check permissions on mutation        | `requireSession('<feature>:write')` at the start of each Server Action               |
+| Check permissions on read            | `hasPermission(session, '<feature>:read')` in pages; `requireSession` in REST reads  |
 | Login screen (not built yet)         | Route group `src/app/(auth)/login/page.tsx` + `AuthTemplate` when integrating an IdP |
 
 Reading the session is a request-time API, so it must be inside `<Suspense>` (exactly as the `02-guides/authentication-with-cache-components.md` guide says). The template does **not** use `unauthorized()` or `forbidden()` because they are still experimental (`authInterrupts`).

@@ -13,7 +13,18 @@ describe('TaskForm', () => {
 
     expect(await screen.findByText('Title must be at least 3 characters')).toBeInTheDocument()
     expect(screen.getByRole('textbox', { name: /title/i })).toHaveAttribute('aria-invalid', 'true')
+    // Announced to screen readers, not only shown next to the field.
+    expect(screen.getByRole('alert')).toHaveTextContent('Please fix the highlighted fields.')
     expect(onSubmit).not.toHaveBeenCalled()
+  })
+
+  it('re-announces the same error on a repeated failed submit', async () => {
+    render(<TaskForm submitLabel="Create task" onSubmit={vi.fn()} />)
+    await userEvent.click(screen.getByRole('button', { name: 'Create task' }))
+    const first = screen.getByRole('alert')
+    await userEvent.click(screen.getByRole('button', { name: 'Create task' }))
+    // A fresh alert node is announced again; an unchanged one is not.
+    expect(screen.getByRole('alert')).not.toBe(first)
   })
 
   it('submits typed values and reports success', async () => {

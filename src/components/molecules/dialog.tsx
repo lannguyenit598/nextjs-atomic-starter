@@ -1,7 +1,7 @@
 'use client'
 
 import { X } from 'lucide-react'
-import { useEffect, useId, useRef, type ReactNode } from 'react'
+import { useEffect, useId, useReducer, useRef, type ReactNode } from 'react'
 
 import { Button } from '@/components/atoms/button'
 import { cn } from '@/lib/utils'
@@ -33,6 +33,9 @@ export function Dialog({
   const ref = useRef<HTMLDialogElement>(null)
   const titleId = useId()
   const descriptionId = useId()
+  const pressedOnBackdrop = useRef(false)
+  // Bumped on every native close so the effect re-syncs when the caller vetoed it (kept `open`).
+  const [closeCount, onNativeClose] = useReducer((count: number) => count + 1, 0)
 
   useEffect(() => {
     const dialog = ref.current
@@ -42,7 +45,7 @@ export function Dialog({
       dialog.querySelector<HTMLElement>('[data-autofocus]')?.focus()
     }
     if (!open && dialog.open) dialog.close()
-  }, [open])
+  }, [open, closeCount])
 
   return (
     <dialog
@@ -54,11 +57,22 @@ export function Dialog({
         event.preventDefault()
         onOpenChange(false)
       }}
-      // Safety net: keeps state in sync if the element is closed any other way.
-      onClose={() => onOpenChange(false)}
+      // Closed some other way, e.g. Chromium makes a repeated Escape non-cancelable and closes the
+      // element itself. If the caller vetoes (keeps `open`), the effect reopens it; children stay
+      // mounted, so a form being submitted keeps its draft and can still show its error.
+      onClose={() => {
+        onNativeClose()
+        onOpenChange(false)
+      }}
       // A click whose target is the <dialog> itself landed on the backdrop (content fills the box).
+      // The press must start there too: selecting text and releasing outside also targets the
+      // <dialog>, and closing then would throw away what the user typed.
+      onPointerDown={(event) => {
+        pressedOnBackdrop.current = event.target === event.currentTarget
+      }}
       onClick={(event) => {
-        if (event.target === event.currentTarget) onOpenChange(false)
+        if (pressedOnBackdrop.current && event.target === event.currentTarget) onOpenChange(false)
+        pressedOnBackdrop.current = false
       }}
       className={cn(
         'm-auto w-[calc(100%-2rem)] max-w-lg rounded-lg border bg-card p-0 text-card-foreground shadow-lg',

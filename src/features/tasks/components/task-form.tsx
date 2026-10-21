@@ -9,7 +9,7 @@ import { Select } from '@/components/atoms/select'
 import { Textarea } from '@/components/atoms/textarea'
 import { Alert } from '@/components/molecules/alert'
 import { FormField } from '@/components/molecules/form-field'
-import { callAction, type ActionResult } from '@/lib/action-result'
+import { callAction, VALIDATION_FAILURE_MESSAGE, type ActionResult } from '@/lib/action-result'
 
 import { TASK_PRIORITY_OPTIONS, TASK_STATUS_OPTIONS } from '../constants'
 import { taskFormSchema } from '../schemas'
@@ -44,15 +44,19 @@ export function TaskForm({
   const [errors, setErrors] = useState<FieldErrors>({})
   const [formError, setFormError] = useState<string>()
   const [submitting, setSubmitting] = useState(false)
+  // Keys the alert so a repeated, identical error remounts it and is announced again.
+  const [attempt, setAttempt] = useState(0)
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    setAttempt((count) => count + 1)
     const values = Object.fromEntries(new FormData(event.currentTarget))
     // Same schema as the Server Action, so most mistakes never reach the server.
     const parsed = taskFormSchema.safeParse(values)
     if (!parsed.success) {
       setErrors(z.flattenError(parsed.error).fieldErrors)
-      setFormError(undefined)
+      // Field errors are not live regions; the alert tells screen reader users why nothing happened.
+      setFormError(VALIDATION_FAILURE_MESSAGE)
       return
     }
     setSubmitting(true)
@@ -69,7 +73,11 @@ export function TaskForm({
 
   return (
     <form onSubmit={submit} noValidate className="flex flex-col gap-4">
-      {formError && <Alert variant="destructive">{formError}</Alert>}
+      {formError && (
+        <Alert key={attempt} variant="destructive">
+          {formError}
+        </Alert>
+      )}
 
       <FormField label="Title" required error={errors.title?.[0]}>
         {(field) => (

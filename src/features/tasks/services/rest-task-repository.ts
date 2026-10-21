@@ -1,7 +1,9 @@
 import 'server-only'
 
 import { backendRequest } from '@/lib/api/backend'
+import { requireSession } from '@/lib/auth'
 
+import { TASK_READ_PERMISSION } from '../constants'
 import { taskPageSchema, taskSchema, taskStatsSchema } from '../schemas'
 import type { TaskRepository } from '../types'
 
@@ -16,12 +18,23 @@ import type { TaskRepository } from '../types'
  *
  * If your backend uses other field names (e.g. snake_case, `data` envelope), map them
  * in this file so the rest of the app keeps using the `Task` type.
+ *
+ * Reads check `tasks:read` here as well as in the pages (fail-closed, like the write
+ * permission in actions.ts), so a page that forgets its check still cannot fetch the data.
  */
 export const restTaskRepository: TaskRepository = {
-  list: ({ q, status, page, pageSize }) =>
-    backendRequest('/tasks', { query: { q, status, page, pageSize }, schema: taskPageSchema }),
+  list: async ({ q, status, page, pageSize }) => {
+    await requireSession(TASK_READ_PERMISSION)
+    return backendRequest('/tasks', {
+      query: { q, status, page, pageSize },
+      schema: taskPageSchema,
+    })
+  },
 
-  stats: () => backendRequest('/tasks/stats', { schema: taskStatsSchema }),
+  stats: async () => {
+    await requireSession(TASK_READ_PERMISSION)
+    return backendRequest('/tasks/stats', { schema: taskStatsSchema })
+  },
 
   create: (input) =>
     backendRequest('/tasks', {

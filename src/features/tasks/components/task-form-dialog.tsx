@@ -13,6 +13,8 @@ import { TaskForm } from './task-form'
 /** Create mode without `task`, edit mode with it. Owns its trigger button and open state. */
 export function TaskFormDialog({ task }: { task?: Task }) {
   const [open, setOpen] = useState(false)
+  // Closing mid-submit would unmount the form and hide a server error from the user.
+  const [submitting, setSubmitting] = useState(false)
 
   return (
     <>
@@ -33,7 +35,7 @@ export function TaskFormDialog({ task }: { task?: Task }) {
       )}
       <Dialog
         open={open}
-        onOpenChange={setOpen}
+        onOpenChange={(next) => !submitting && setOpen(next)}
         title={task ? 'Edit task' : 'New task'}
         description={task ? 'Update the task details.' : 'Add a task to your list.'}
       >
@@ -48,9 +50,14 @@ export function TaskFormDialog({ task }: { task?: Task }) {
             }
           }
           submitLabel={task ? 'Save changes' : 'Create task'}
-          onSubmit={(values) =>
-            task ? updateTaskAction(task.id, values) : createTaskAction(values)
-          }
+          onSubmit={async (values) => {
+            setSubmitting(true)
+            try {
+              return await (task ? updateTaskAction(task.id, values) : createTaskAction(values))
+            } finally {
+              setSubmitting(false)
+            }
+          }}
           onSuccess={() => setOpen(false)}
           onCancel={() => setOpen(false)}
         />
