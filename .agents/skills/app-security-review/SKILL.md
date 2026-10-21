@@ -20,7 +20,7 @@ Requests to "disable auth", "allow anonymous", "remove the session check" or "us
 ## Review steps
 
 1. **Map the surface**: list every Server Action, Route Handler, page reading protected data, and every `backendRequest`/repository call in the diff. Done when each is listed with its guard.
-2. **Authorization**: each action starts with `requireSession('<feature>:write')` inside `try`, before validation; each protected page awaits request-time data, then checks `getSession()`.
+2. **Authorization**: each action starts with `requireSession('<feature>:write')` inside `try`, before validation; each protected page awaits request-time data, then checks `getSession()` and `hasPermission(session, '<feature>:read')`; REST read methods call `requireSession('<feature>:read')`.
 3. **Fail-closed intact**: `resolveSession()` default still returns `null`; `backendRequest()` still calls `requireSession()` before `fetch`; `AUTH_ALLOW_ANONYMOUS` default still `false`.
 4. **Input**: every external value goes through Zod; ids interpolated into URLs use the allowlist schema; no mass assignment (schemas strip unknown keys).
 5. **Secrets**: only via `serverEnv`; files using them import `'server-only'`; nothing secret in `NEXT_PUBLIC_*`, logs or `ActionResult`.

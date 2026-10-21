@@ -8,8 +8,9 @@ import { EmptyState } from '@/components/molecules/empty-state'
 import { PageHeader } from '@/components/molecules/page-header'
 import { RecentTasks } from '@/features/tasks/components/recent-tasks'
 import { TaskStats } from '@/features/tasks/components/task-stats'
+import { TASK_READ_PERMISSION } from '@/features/tasks/constants'
 import { taskRepository } from '@/features/tasks/services/task-repository'
-import { getSession } from '@/lib/auth'
+import { getSession, hasPermission } from '@/lib/auth'
 
 export const metadata: Metadata = { title: 'Dashboard' }
 
@@ -28,12 +29,22 @@ export default function DashboardPage() {
 async function DashboardContent() {
   // Always render per request (fresh data); never bake a build-time snapshot.
   await connection()
-  if (!(await getSession())) {
+  const session = await getSession()
+  if (!session) {
     return (
       <EmptyState
         icon={<LockKeyhole />}
         title="Sign-in required"
         description="You need to be signed in to see this page."
+      />
+    )
+  }
+  if (!hasPermission(session, TASK_READ_PERMISSION)) {
+    return (
+      <EmptyState
+        icon={<LockKeyhole />}
+        title="Permission required"
+        description="You don't have permission to view tasks."
       />
     )
   }

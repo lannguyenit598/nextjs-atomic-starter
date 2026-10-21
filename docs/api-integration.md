@@ -87,6 +87,11 @@ Content-Type: application/json
 
 The response is validated with `taskSchema`. If the backend returns the wrong shape (missing field, wrong type), the request throws `ApiError` with code `INVALID_RESPONSE`. The error is caught right at the boundary instead of breaking the UI somewhere else.
 
+Parts of the contract the template assumes but does not enforce. Check them against your backend:
+
+- **Order of `GET /tasks`**: the dashboard's "Recently updated" card shows the first page as returned. The demo store sorts by `updatedAt` descending; the REST adapter sends no sort parameter. If your backend's default order differs, send its sort parameter (e.g. `sort=-updatedAt`) in `rest-task-repository.ts`.
+- **Id format**: `taskSchema.id` accepts any string, but edits and deletes only accept ids matching `^[A-Za-z0-9_-]{1,100}$` (`taskIdSchema`). Ids with other characters (`.`, `:`, `/`) list fine and then fail with "Invalid task id". If your ids look like that, widen `taskIdSchema` only to characters that are safe in a URL path segment, or use `taskIdSchema` inside `taskSchema` so a mismatch fails loudly on read.
+
 ## 4. Backend with a different contract?
 
 Change only the **adapter**. Example: a Spring backend that returns snake_case, wraps results in `data`, and numbers pages from 0:
@@ -161,7 +166,8 @@ How errors are shown:
 
 - **Server Action** → `toActionFailure()`:
   - `VALIDATION_ERROR` (400/422), `NOT_FOUND`, `TIMEOUT`, `NETWORK_ERROR`: the message is shown to the user.
-  - 401/403, other 4xx, 5xx and unknown errors: logged on the server only; the user sees "Something went wrong". These errors usually describe server configuration (for example a wrong service token) or internal details.
+  - 401: the user's token was rejected (usually an expired session); the user sees the fixed "Please sign in and try again" message. No backend text is shown.
+  - 403, other 4xx, 5xx and unknown errors: logged on the server only; the user sees "Something went wrong". These errors usually describe server configuration (for example a wrong service token) or internal details.
 - **Client calling a Server Action** → wrap it with `callAction()` (`src/lib/action-result.ts`). If the call itself is rejected (network lost, a new deployment no longer has the old action), the user sees the error inside the form instead of the whole page being replaced by the error boundary.
 - **Server Component** (reading data) → the error is thrown and caught by `app/(app)/error.tsx`, which shows an Alert with a "Try again" button, while the sidebar and header remain usable.
 - **Validation errors from the backend** (422): to show errors on individual fields, map `error.details` to `fieldErrors` in the action:
@@ -189,6 +195,8 @@ controller.abort()
 ```
 
 The caller's cancel signal and the timeout signal are combined with `AbortSignal.any`.
+
+Known limit: the timeout is mapped to `TIMEOUT` only while waiting for the response headers. If it fires while the body is still streaming (a large or slow response), the raw `TimeoutError` propagates and the user sees the generic message. If you have slow, large responses, move `readBody()` in `src/lib/api/http-client.ts` into the same error mapping as `fetch`.
 
 ## 7. Client-side fetching and TanStack Query
 
@@ -248,21 +256,27 @@ The template does **not** install an auth library, because the sign-in mechanism
 
 ### Contract
 
-| Part                          | File                       | Role                                                                                                                    |
-| ----------------------------- | -------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| `Session`                     | `src/lib/auth.ts`          | `{ userId, permissions, accessToken? }`: what the app needs to know about the caller                                    |
-| `resolveSession()`            | `src/lib/auth-provider.ts` | **The only function you need to write.** Returns a `Session`, or `null` when not signed in. Returns `null` by default   |
-| `getSession()`                | `src/lib/auth.ts`          | Demo mode → demo session; `AUTH_ALLOW_ANONYMOUS=true` → anonymous session; otherwise → `resolveSession()`               |
-| `requireSession(permission?)` | `src/lib/auth.ts`          | Throws `AuthError` (`unauthenticated` or `forbidden`); `toActionFailure()` turns this error into a message for the user |
+| Part                          | File                       | Role                                                                                                                                                                                                                                                   |
+| ----------------------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `Session`                     | `src/lib/auth.ts`          | `{ userId, permissions, accessToken? }`: what the app needs to know about the caller                                                                                                                                                                   |
+| `resolveSession()`            | `src/lib/auth-provider.ts` | **The only function you need to write.** Returns a `Session`, or `null` when not signed in. Returns `null` by default                                                                                                                                  |
+| `getSession()`                | `src/lib/auth.ts`          | Demo mode → demo session; `AUTH_ALLOW_ANONYMOUS=true` → anonymous session; otherwise → `resolveSession()`. Memoized per request with React `cache()`, so `resolveSession()` runs once per render even though pages and `backendRequest()` both call it |
+| `hasPermission(session, p)`   | `src/lib/auth.ts`          | `true` when the session has `p` or `'*'`. For pages that render a "Permission required" state instead of throwing                                                                                                                                      |
+| `requireSession(permission?)` | `src/lib/auth.ts`          | Throws `AuthError` (`unauthenticated` or `forbidden`); `toActionFailure()` turns this error into a message for the user                                                                                                                                |
+
+### Permissions
+
+Each feature declares two plain strings in its `constants.ts`, for example `tasks:read` and `tasks:write`. Write does **not** imply read: give a user both if they should see and change data. `'*'` grants everything (demo and anonymous sessions use it). `resolveSession()` returns the permissions your backend assigns to the user.
 
 ### Where checks happen
 
-| Layer               | How it checks                                                                                                                                 |
-| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| Server Action       | `await requireSession('<feature>:write')` is the **first line** in `try`, even before validation                                              |
-| Page (reading data) | `if (!(await getSession()))` then show "Sign-in required" (inside `<Suspense>`)                                                               |
-| `backendRequest()`  | Always calls `requireSession()` before `fetch`. If a page or action forgets to check, the request still cannot reach the backend              |
-| Backend             | Checks fine-grained permissions (data ownership, tenant) based on the user's `accessToken`. The frontend is only an extra layer of protection |
+| Layer                | How it checks                                                                                                                                                    |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Server Action        | `await requireSession('<feature>:write')` is the **first line** in `try`, even before validation                                                                 |
+| Page (reading data)  | `const session = await getSession()`: no session → "Sign-in required"; `!hasPermission(session, '<feature>:read')` → "Permission required" (inside `<Suspense>`) |
+| REST adapter (reads) | `list`/`stats` call `requireSession('<feature>:read')` before `backendRequest()`. If a page forgets its check, the data still is not fetched                     |
+| `backendRequest()`   | Always calls `requireSession()` before `fetch`. If a page or action forgets to check, the request still cannot reach the backend                                 |
+| Backend              | Checks fine-grained permissions (data ownership, tenant) based on the user's `accessToken`. The frontend is only an extra layer of protection                    |
 
 `backendRequest()` sends `session.accessToken` if present; only when it is absent does it use `API_TOKEN`. Return `accessToken` from `resolveSession()` so the backend knows **who** is calling. Otherwise, every signed-in user shares the permissions of the service token.
 
@@ -307,7 +321,8 @@ export async function resolveSession(): Promise<Session | null> {
 - Do **not** store tokens in `localStorage`: any script running on the page (XSS) can read them.
 - Do **not** put tokens or internal URLs in `NEXT_PUBLIC_*` variables.
 - `AUTH_ALLOW_ANONYMOUS=true` gives **every** visitor the full permissions of `API_TOKEN`. The server prints a warning on startup. Use it only when the app is already protected in front (VPN, SSO gateway).
-- A repository that does not go through REST (for example one that calls the DB directly) must call `requireSession()` itself.
+- A repository that does not go through REST (for example one that calls the DB directly) must call `requireSession()` itself. The demo repository (`demo-task-repository.ts`) skips this only because the demo session always has `'*'`; do not copy that part into a real repository.
+- `API_MODE` defaults to `demo`. A production build started without `API_MODE=rest` serves in-memory data that any visitor can change; the server prints an `[env]` warning on startup.
 
 ## 9. Security checklist
 

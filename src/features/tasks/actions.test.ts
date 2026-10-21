@@ -59,12 +59,14 @@ describe('task Server Actions', () => {
     expect(repo.remove).not.toHaveBeenCalled()
   })
 
-  it('hides backend auth errors (service misconfiguration) from users', async () => {
+  it('maps a backend 401 to the sign-in message without leaking its text', async () => {
     repo.remove.mockRejectedValue(
       new ApiError('Invalid service token for tenant 42', { status: 401, code: 'HTTP_ERROR' }),
     )
     const result = await deleteTaskAction('task-1')
     expect(JSON.stringify(result)).not.toContain('token')
+    // With per-user tokens a 401 means the session expired: ask the user to sign in again.
+    expect(result).toMatchObject({ ok: false, error: expect.stringMatching(/sign in/i) })
   })
 
   it('hides 5xx and unknown error details', async () => {

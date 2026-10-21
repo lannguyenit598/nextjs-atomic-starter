@@ -23,10 +23,16 @@ export async function callAction(action: () => Promise<ActionResult>): Promise<A
   }
 }
 
+/** Shared by the Server Action result and client-side validation, so both read the same. */
+export const VALIDATION_FAILURE_MESSAGE = 'Please fix the highlighted fields.'
+
+const SIGN_IN_MESSAGE =
+  'Your session has expired or you are not signed in. Please sign in and try again.'
+
 export function validationFailure(error: z.ZodError): ActionResult {
   return {
     ok: false,
-    error: 'Please fix the highlighted fields.',
+    error: VALIDATION_FAILURE_MESSAGE,
     fieldErrors: z.flattenError(error).fieldErrors,
   }
 }
@@ -46,20 +52,18 @@ export function toActionFailure(error: unknown): ActionResult {
     const forbidden = (error as Error & { reason?: string }).reason === 'forbidden'
     return {
       ok: false,
-      error: forbidden
-        ? 'You do not have permission to do this.'
-        : 'Your session has expired or you are not signed in. Please sign in and try again.',
+      error: forbidden ? 'You do not have permission to do this.' : SIGN_IN_MESSAGE,
     }
   }
   console.error(error)
-  // Only pass through messages that are meant for end users. 401/403/5xx usually describe
+  // The user's own token was rejected (expired session). With the shared API_TOKEN it is a
+  // server misconfiguration instead; either way the fixed text reveals nothing from the backend.
+  if (error instanceof ApiError && error.status === 401) {
+    return { ok: false, error: SIGN_IN_MESSAGE }
+  }
+  // Only pass through messages that are meant for end users. 403/5xx usually describe
   // server configuration (e.g. a bad service token) or internals.
-  if (
-    error instanceof ApiError &&
-    USER_FACING_CODES.has(error.code) &&
-    error.status !== 401 &&
-    error.status !== 403
-  ) {
+  if (error instanceof ApiError && USER_FACING_CODES.has(error.code) && error.status !== 403) {
     return { ok: false, error: error.message }
   }
   return { ok: false, error: 'Something went wrong. Please try again.' }

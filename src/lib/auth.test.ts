@@ -39,6 +39,13 @@ describe('auth policy', () => {
     await expect(requireSession('orders:write')).rejects.toMatchObject({ reason: 'forbidden' })
   })
 
+  it('hasPermission: exact match or wildcard; write does not imply read', async () => {
+    const { hasPermission } = await loadAuth({ API_MODE: 'demo' })
+    expect(hasPermission({ userId: 'a', permissions: ['*'] }, 'tasks:read')).toBe(true)
+    expect(hasPermission({ userId: 'r', permissions: ['tasks:read'] }, 'tasks:read')).toBe(true)
+    expect(hasPermission({ userId: 'w', permissions: ['tasks:write'] }, 'tasks:read')).toBe(false)
+  })
+
   it('anonymous access only when explicitly allowed', async () => {
     const { requireSession } = await loadAuth({ ...REST, AUTH_ALLOW_ANONYMOUS: true })
     await expect(requireSession('orders:write')).resolves.toMatchObject({ userId: 'anonymous' })

@@ -62,8 +62,16 @@ export const taskIdSchema = z.string().regex(/^[A-Za-z0-9_-]{1,100}$/)
 
 export const TASK_PAGE_SIZE = 10
 
+export const TASK_SEARCH_MAX_LENGTH = 100
+
 export const taskListQuerySchema = z.object({
-  q: z.string().trim().max(100).optional().catch(undefined),
+  // Truncate, don't drop: a dropped query shows unfiltered results under a filled search box.
+  q: z
+    .string()
+    .trim()
+    .transform((value) => value.slice(0, TASK_SEARCH_MAX_LENGTH))
+    .optional()
+    .catch(undefined),
   status: taskStatusSchema.optional().catch(undefined),
   page: z.coerce.number().int().min(1).catch(1),
 })

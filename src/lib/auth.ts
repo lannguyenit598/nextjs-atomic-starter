@@ -1,5 +1,7 @@
 import 'server-only'
 
+import { cache } from 'react'
+
 import { serverEnv } from '@/lib/env'
 
 import { resolveSession } from './auth-provider'
@@ -30,14 +32,18 @@ export class AuthError extends Error {
 const DEMO_SESSION: Session = { userId: 'demo', permissions: ['*'] }
 const ANONYMOUS_SESSION: Session = { userId: 'anonymous', permissions: ['*'] }
 
-/** The current caller, or null. Reads request data (cookies), so call it inside <Suspense>. */
-export async function getSession(): Promise<Session | null> {
+/**
+ * The current caller, or null. Reads request data (cookies), so call it inside <Suspense>.
+ * Memoized per request: a page check plus every backendRequest() would otherwise each run the
+ * identity provider (often a token verification or a "/me" call).
+ */
+export const getSession = cache(async (): Promise<Session | null> => {
   if (serverEnv.API_MODE === 'demo') return DEMO_SESSION
   if (serverEnv.AUTH_ALLOW_ANONYMOUS) return ANONYMOUS_SESSION
   return resolveSession()
-}
+})
 
-function hasPermission(session: Session, permission: string) {
+export function hasPermission(session: Session, permission: string) {
   return session.permissions.includes('*') || session.permissions.includes(permission)
 }
 

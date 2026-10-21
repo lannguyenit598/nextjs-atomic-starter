@@ -165,13 +165,16 @@ export const demoProductRepository = createDemoProductRepository(
 import 'server-only'
 
 import { backendRequest } from '@/lib/api/backend'
+import { requireSession } from '@/lib/auth'
 
 import { productPageSchema, productSchema } from '../schemas'
 import type { ProductRepository } from '../types'
 
 export const restProductRepository: ProductRepository = {
-  list: ({ q, page, pageSize }) =>
-    backendRequest('/products', { query: { q, page, pageSize }, schema: productPageSchema }),
+  list: async ({ q, page, pageSize }) => {
+    await requireSession('products:read') // reads check the read permission here too (fail-closed)
+    return backendRequest('/products', { query: { q, page, pageSize }, schema: productPageSchema })
+  },
   create: (input) =>
     backendRequest('/products', { method: 'POST', body: input, schema: productSchema }),
   remove: async (id) => {
@@ -312,7 +315,7 @@ import { ProductFormDialog } from '@/features/products/components/product-form-d
 import { ProductTable } from '@/features/products/components/product-table'
 import { productListQuerySchema } from '@/features/products/schemas'
 import { productRepository } from '@/features/products/services/product-repository'
-import { getSession } from '@/lib/auth'
+import { getSession, hasPermission } from '@/lib/auth'
 
 export const metadata: Metadata = { title: 'Products' }
 
@@ -329,7 +332,9 @@ export default function ProductsPage({ searchParams }: PageProps<'/products'>) {
 
 async function ProductList({ searchParams }: Pick<PageProps<'/products'>, 'searchParams'>) {
   const raw = await searchParams // request-time data first, so the session is not evaluated at build time
-  if (!(await getSession())) return <EmptyState title="Sign-in required" />
+  const session = await getSession()
+  if (!session) return <EmptyState title="Sign-in required" />
+  if (!hasPermission(session, 'products:read')) return <EmptyState title="Permission required" />
   const query = productListQuerySchema.parse({ q: raw.q, page: raw.page })
   const result = await productRepository.list({ ...query, pageSize: 10 })
   return <ProductTable products={result.items} />

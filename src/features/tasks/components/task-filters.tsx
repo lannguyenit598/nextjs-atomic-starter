@@ -8,6 +8,7 @@ import { Spinner } from '@/components/atoms/spinner'
 import { SearchInput } from '@/components/molecules/search-input'
 
 import { TASK_STATUS_OPTIONS } from '../constants'
+import { TASK_SEARCH_MAX_LENGTH } from '../schemas'
 import type { TaskStatus } from '../types'
 
 const SEARCH_DEBOUNCE_MS = 300
@@ -64,6 +65,7 @@ export function TaskFilters({ q = '', status }: { q?: string; status?: TaskStatu
         aria-label="Search tasks"
         placeholder="Search tasks…"
         className="sm:w-72"
+        maxLength={TASK_SEARCH_MAX_LENGTH}
         value={query}
         onChange={(event) => {
           const next = event.target.value

@@ -13,6 +13,8 @@ describe('TaskForm', () => {
 
     expect(await screen.findByText('Title must be at least 3 characters')).toBeInTheDocument()
     expect(screen.getByRole('textbox', { name: /title/i })).toHaveAttribute('aria-invalid', 'true')
+    // Announced to screen readers, not only shown next to the field.
+    expect(screen.getByRole('alert')).toHaveTextContent('Please fix the highlighted fields.')
     expect(onSubmit).not.toHaveBeenCalled()
   })
 

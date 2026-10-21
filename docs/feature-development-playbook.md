@@ -149,7 +149,8 @@ Checklist:
 - [ ] List-query schema uses `.catch()` defaults: a bad URL parameter falls back to a default instead of crashing the page.
 - [ ] Id schema uses the allowlist `^[A-Za-z0-9_-]{1,100}$` because ids go into backend URLs (R-SEC-4).
 - [ ] Types are `z.infer` / `z.input` / `z.output` of the schemas, never hand-written copies; `types.ts` also declares the `<F>Repository` contract.
-- [ ] `constants.ts`: `<F>_WRITE_PERMISSION = '<f>:write'`, labels, enum → badge variant, select options.
+- [ ] `constants.ts`: `<F>_READ_PERMISSION = '<f>:read'`, `<F>_WRITE_PERMISSION = '<f>:write'`, labels, enum → badge variant, select options.
+- [ ] REST adapter read methods (`list`, `stats`…) call `requireSession(<F>_READ_PERMISSION)` before `backendRequest()`.
 
 **Done when:** `pnpm typecheck` passes and `schemas.test.ts` covers valid input, each invalid rule and the id allowlist.
 
@@ -260,7 +261,7 @@ Run pnpm typecheck, pnpm lint and pnpm test, report the results, then stop.
 Checklist:
 
 - [ ] `src/app/(app)/<f>/page.tsx` with `metadata`, `PageHeader` (create button in `actions`) and an async list section inside `<Suspense>` with a skeleton fallback.
-- [ ] Inside the async section, in this order (R-NX-5, R-SEC-2): `await searchParams` (or `await connection()`), then `getSession()` → "Sign-in required" empty state, then parse the query with the list-query schema, then read the repository.
+- [ ] Inside the async section, in this order (R-NX-5, R-SEC-2): `await searchParams` (or `await connection()`), then `getSession()` → "Sign-in required" empty state, then `hasPermission(session, <F>_READ_PERMISSION)` → "Permission required" empty state, then parse the query with the list-query schema, then read the repository.
 - [ ] Empty list, filtered-empty list and "page past the end" each have a message (R-NX-8). Copy `src/app/(app)/tasks/page.tsx`.
 - [ ] Menu entry in `src/config/navigation.tsx` with a `lucide-react` icon.
 - [ ] Optional dashboard widget: a feature component rendered from `src/app/(app)/dashboard/page.tsx`, data fetched with `Promise.all` alongside the rest.
