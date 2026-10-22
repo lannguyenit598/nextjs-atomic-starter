@@ -36,7 +36,7 @@ Kiến trúc: **Hybrid Atomic Design + Feature-Based**.
 
 ## Yêu cầu
 
-- Node.js `^22.22.2`, `^24.15.0` hoặc `>=26` (giới hạn bởi Vitest, jsdom và lint-staged). Bản dùng chung cho local và CI nằm trong `.nvmrc` (24); chạy `nvm use` hoặc `fnm use` để chọn đúng version.
+- Node.js `^22.23.4`, `^24.22.1` hoặc `>=26.12.1` (mức tối thiểu theo bản vá bảo mật Node tháng 10/2026). Bản dùng chung cho local và CI nằm trong `.nvmrc` (24.22.1); chạy `nvm use` hoặc `fnm use` để chọn đúng version.
 - pnpm (version được khóa trong `packageManager` của `package.json`). Cài đặt qua Corepack:
 
 ```bash

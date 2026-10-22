@@ -17,7 +17,7 @@ A step-by-step walkthrough for turning this template into your own app: from the
 
 ## 1. Prerequisites
 
-- **Node.js** `^22.22.2`, `^24.15.0` or `>=26` (`engines` in `package.json`). The version used locally and in CI is in `.nvmrc` (24): run `nvm use` or `fnm use`.
+- **Node.js** `^22.23.4`, `^24.22.1` or `>=26.12.1` (`engines` in `package.json`). The version used locally and in CI is in `.nvmrc` (24.22.1): run `nvm use` or `fnm use`.
 - **pnpm**, pinned by `packageManager` in `package.json`. Enable it once per machine:
 
 ```bash
