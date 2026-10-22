@@ -34,7 +34,7 @@ Architecture: **Hybrid Atomic Design + Feature-Based**.
 
 ## Requirements
 
-- Node.js `^22.22.2`, `^24.15.0` or `>=26` (constrained by Vitest, jsdom and lint-staged). The version shared by local and CI is in `.nvmrc` (24); run `nvm use` or `fnm use` to select it.
+- Node.js `^22.23.4`, `^24.22.1` or `>=26.12.1` (security floor: Node October 2026 security releases). The version shared by local and CI is in `.nvmrc` (24.22.1); run `nvm use` or `fnm use` to select it.
 - pnpm (version pinned in the `packageManager` field of `package.json`). Install it via Corepack:
 
 ```bash
